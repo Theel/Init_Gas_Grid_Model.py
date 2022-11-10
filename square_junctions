@@ -1,0 +1,183 @@
+                name  pn_bar  tfluid_k  height_m  in_service      type
+0  Junction_ext_grid    1.05    293.15       0.0        True  junction
+1          Junction1    1.05    293.15       0.0        True  junction
+2          Junction2    1.05    293.15       0.0        True  junction
+3          Junction3    1.05    293.15       0.0        True  junction
+4          Junction4    1.05    293.15       0.0        True  junction
+5      Junction_sink    1.05    293.15       0.0        True  junction
+      p_bar     t_k
+0  1.100000  293.15
+1  1.081342  293.15
+2  1.073705  293.15
+3  1.078799  293.15
+4  1.076254  293.15
+5  1.054809  293.15                name  pn_bar  tfluid_k  height_m  in_service      type
+0  Junction_ext_grid    1.05    293.15       0.0        True  junction
+1          Junction1    1.05    293.15       0.0        True  junction
+2          Junction2    1.05    293.15       0.0        True  junction
+3          Junction3    1.05    293.15       0.0        True  junction
+4          Junction4    1.05    293.15       0.0        True  junction
+5      Junction_sink    1.05    293.15       0.0        True  junction
+      p_bar     t_k
+0  1.100000  293.15
+1  1.081342  293.15
+2  1.073705  293.15
+3  1.078799  293.15
+4  1.076254  293.15
+5  1.054809  293.15                name  pn_bar  tfluid_k  height_m  in_service      type
+0  Junction_ext_grid    1.05    293.15       0.0        True  junction
+1          Junction1    1.05    293.15       0.0        True  junction
+2          Junction2    1.05    293.15       0.0        True  junction
+3          Junction3    1.05    293.15       0.0        True  junction
+4          Junction4    1.05    293.15       0.0        True  junction
+5      Junction_sink    1.05    293.15       0.0        True  junction
+      p_bar     t_k
+0  1.100000  293.15
+1  1.081342  293.15
+2  1.073705  293.15
+3  1.078799  293.15
+4  1.076254  293.15
+5  1.054809  293.15                name  pn_bar  tfluid_k  height_m  in_service      type
+0  Junction_ext_grid    1.05    293.15       0.0        True  junction
+1          Junction1    1.05    293.15       0.0        True  junction
+2          Junction2    1.05    293.15       0.0        True  junction
+3          Junction3    1.05    293.15       0.0        True  junction
+4          Junction4    1.05    293.15       0.0        True  junction
+5      Junction_sink    1.05    293.15       0.0        True  junction
+      p_bar     t_k
+0  1.100000  293.15
+1  1.081342  293.15
+2  1.073705  293.15
+3  1.078799  293.15
+4  1.076254  293.15
+5  1.054809  293.15                name  pn_bar  tfluid_k  height_m  in_service      type
+0  Junction_ext_grid    1.05    293.15       0.0        True  junction
+1          Junction1    1.05    293.15       0.0        True  junction
+2          Junction2    1.05    293.15       0.0        True  junction
+3          Junction3    1.05    293.15       0.0        True  junction
+4          Junction4    1.05    293.15       0.0        True  junction
+5      Junction_sink    1.05    293.15       0.0        True  junction
+      p_bar     t_k
+0  1.100000  293.15
+1  1.081342  293.15
+2  1.073705  293.15
+3  1.078799  293.15
+4  1.076254  293.15
+5  1.054809  293.15                name  pn_bar  tfluid_k  height_m  in_service      type
+0  Junction_ext_grid    1.05    293.15       0.0        True  junction
+1          Junction1    1.05    293.15       0.0        True  junction
+2          Junction2    1.05    293.15       0.0        True  junction
+3          Junction3    1.05    293.15       0.0        True  junction
+4          Junction4    1.05    293.15       0.0        True  junction
+5      Junction_sink    1.05    293.15       0.0        True  junction
+      p_bar     t_k
+0  1.100000  293.15
+1  1.081342  293.15
+2  1.073705  293.15
+3  1.078799  293.15
+4  1.076254  293.15
+5  1.054809  293.15                name  pn_bar  tfluid_k  height_m  in_service      type
+0  Junction_ext_grid    1.05    293.15       0.0        True  junction
+1          Junction1    1.05    293.15       0.0        True  junction
+2          Junction2    1.05    293.15       0.0        True  junction
+3          Junction3    1.05    293.15       0.0        True  junction
+4          Junction4    1.05    293.15       0.0        True  junction
+5      Junction_sink    1.05    293.15       0.0        True  junction
+      p_bar     t_k
+0  1.050000  293.15
+1  1.030884  293.15
+2  1.023056  293.15
+3  1.028278  293.15
+4  1.025669  293.15
+5  1.003683  293.15                name  pn_bar  tfluid_k  height_m  in_service      type
+0  Junction_ext_grid    1.05    293.15       0.0        True  junction
+1          Junction1    1.05    293.15       0.0        True  junction
+2          Junction2    1.05    293.15       0.0        True  junction
+3          Junction3    1.05    293.15       0.0        True  junction
+4          Junction4    1.05    293.15       0.0        True  junction
+5      Junction_sink    1.05    293.15       0.0        True  junction
+      p_bar     t_k
+0  1.050000  293.15
+1  1.030884  293.15
+2  1.023056  293.15
+3  1.028278  293.15
+4  1.025669  293.15
+5  1.003683  293.15                name  pn_bar  tfluid_k  height_m  in_service      type
+0  Junction_ext_grid    1.05    293.15       0.0        True  junction
+1          Junction1    1.05    293.15       0.0        True  junction
+2          Junction2    1.05    293.15       0.0        True  junction
+3          Junction3    1.05    293.15       0.0        True  junction
+4          Junction4    1.05    293.15       0.0        True  junction
+5      Junction_sink    1.05    293.15       0.0        True  junction
+      p_bar     t_k
+0  1.050000  293.15
+1  1.030884  293.15
+2  1.023056  293.15
+3  1.028278  293.15
+4  1.025669  293.15
+5  1.003683  293.15                name  pn_bar  tfluid_k  height_m  in_service      type
+0  Junction_ext_grid    1.05    293.15       0.0        True  junction
+1          Junction1    1.05    293.15       0.0        True  junction
+2          Junction2    1.05    293.15       0.0        True  junction
+3          Junction3    1.05    293.15       0.0        True  junction
+4          Junction4    1.05    293.15       0.0        True  junction
+5      Junction_sink    1.05    293.15       0.0        True  junction
+      p_bar     t_k
+0  1.050000  293.15
+1  1.030884  293.15
+2  1.023056  293.15
+3  1.028278  293.15
+4  1.025669  293.15
+5  1.003683  293.15                name  pn_bar  tfluid_k  height_m  in_service      type
+0  Junction_ext_grid    1.05    293.15       0.0        True  junction
+1          Junction1    1.05    293.15       0.0        True  junction
+2          Junction2    1.05    293.15       0.0        True  junction
+3          Junction3    1.05    293.15       0.0        True  junction
+4          Junction4    1.05    293.15       0.0        True  junction
+5      Junction_sink    1.05    293.15       0.0        True  junction
+      p_bar     t_k
+0  1.050000  293.15
+1  1.030884  293.15
+2  1.023056  293.15
+3  1.028278  293.15
+4  1.025669  293.15
+5  1.003683  293.15                name  pn_bar  tfluid_k  height_m  in_service      type
+0  Junction_ext_grid    1.05    293.15       0.0        True  junction
+1          Junction1    1.05    293.15       0.0        True  junction
+2          Junction2    1.05    293.15       0.0        True  junction
+3          Junction3    1.05    293.15       0.0        True  junction
+4          Junction4    1.05    293.15       0.0        True  junction
+5      Junction_sink    1.05    293.15       0.0        True  junction
+      p_bar     t_k
+0  1.050000  293.15
+1  1.030884  293.15
+2  1.023056  293.15
+3  1.028278  293.15
+4  1.025669  293.15
+5  1.003683  293.15                name  pn_bar  tfluid_k  height_m  in_service      type
+0  Junction_ext_grid    1.05    293.15       0.0        True  junction
+1          Junction1    1.05    293.15       0.0        True  junction
+2          Junction2    1.05    293.15       0.0        True  junction
+3          Junction3    1.05    293.15       0.0        True  junction
+4          Junction4    1.05    293.15       0.0        True  junction
+5      Junction_sink    1.05    293.15       0.0        True  junction
+      p_bar     t_k
+0  1.050000  293.15
+1  1.030884  293.15
+2  1.023056  293.15
+3  1.028278  293.15
+4  1.025669  293.15
+5  1.003683  293.15                name  pn_bar  tfluid_k  height_m  in_service      type
+0  Junction_ext_grid    1.05    293.15       0.0        True  junction
+1          Junction1    1.05    293.15       0.0        True  junction
+2          Junction2    1.05    293.15       0.0        True  junction
+3          Junction3    1.05    293.15       0.0        True  junction
+4          Junction4    1.05    293.15       0.0        True  junction
+5      Junction_sink    1.05    293.15       0.0        True  junction
+      p_bar     t_k
+0  1.050000  293.15
+1  1.030884  293.15
+2  1.023056  293.15
+3  1.028278  293.15
+4  1.025669  293.15
+5  1.003683  293.15
