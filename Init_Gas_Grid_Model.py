@@ -220,12 +220,11 @@ def Modelica_create_init(net,modelName="pandapipes_model"):
     nodes_from = []
     for i in range(len(junction_from)):
         if 2 == junction_from.values[i]:
-            nodes_from.append(True)
+            nodes_from.append(junction_from.index[i])
             geodata = net.junction_geodata.loc[junction_from.index[i]]
             f.write(f'TransiEnt.Grid.Gas.StaticCycles.Split junction{junction_from.index[i]}(medium=medium)'
                     f'    annotation ({str_placement_nodes(geodata, scale_factor)});\n')
-        else:
-            nodes_from.append(False)
+
         # multi node from
         if 2 < junction_from.values[i]:
             print('multi_nodes_from')
@@ -234,15 +233,14 @@ def Modelica_create_init(net,modelName="pandapipes_model"):
     nodes_to = []
     for i in range(len(junction_to)):
         if 2 == junction_to.values[i]:
-            nodes_to.append(True)
+            nodes_to.append(junction_to.index[i])
             geodata = net.junction_geodata.loc[junction_to.index[i]]
             f.write(f'TransiEnt.Grid.Gas.StaticCycles.Mixer1 junction{junction_to.index[i]}(medium=medium)'
                     f'    annotation ({str_placement_nodes(geodata, scale_factor)});\n')
             #Valve
             f.write(f'TransiEnt.Grid.Gas.StaticCycles.Valve_cutFlow valve_cutFlow{i}(medium=medium)'
                     f'    annotation ({str_placement_valves(net, scale_factor, junction_to.index[i])});\n')
-        else:
-            nodes_to.append(False)
+
         # multi node to
         if 2 < junction_to.values[i]:
             print('multi_nodes_to')
@@ -253,14 +251,50 @@ def Modelica_create_init(net,modelName="pandapipes_model"):
     #connections
 
     for i, row in net.junction.iterrows():
+        if i in nodes_from:
+            if i in net.pipe['from_junction']:
+                pipes_from = net.pipe[net.pipe['from_junction'] == i]
+                for b, row in pipes_from.iterrows():
+                    f.write(f'connect(junction{i}.outlet{b+1},{pipes_from["name"][b]}.inlet )\n')
+            if i in net.pipe['to_junction']:
+                pipes_from = net.pipe[net.pipe['to_junction'] == i]
+                for b, row in pipes_to.iterrows():
+                    f.write(f'connect({pipes_from["name"][b]}.outlet,junction{i}.inlet )\n')
+            if i in net.ext_grid['junction']:
+                ext_grid = net.ext_grid[net.ext_grid['junction'] == i]
+                f.write(f'connect({ext_grid["name"][0]}.outlet,junction{i}.inlet )\n')
+            if i in net.sink['junction']:
+                sink = net.sink[net.sink['junction'] == i]
+                f.write(f'connect(junction{i}.outlet{2},{sink["name"][0]}.inlet )\n')
+
+        if i in nodes_to:
+            f.write(f'connect(valve{i}.outlet,junction{i}.inlet2 )\n')
+            if i in net.pipe['to_junction']:
+                pipes_to = net.pipe[net.pipe['to_junction'] == i]
+                for b, row in pipes_to.iterrows():
+                    if b == 0:
+                        f.write(f'connect({pipes_to["name"][b]}.outlet,junction{i}.inlet{b+1} )\n')
+                    else:
+                        f.write(f'connect({pipes_to["name"][b]}.outlet,valve{i}.inlet )\n')
+            if i in net.pipe['from_junction']:
+                pipes_from = net.pipe[net.pipe['from_junction'] == i]
+                for b, row in pipes_from.iterrows():
+                    f.write(f'connect(junction{i}.outlet,{pipes_from["name"][b]}.inlet )\n')
+            if i in net.ext_grid['junction']:
+                ext_grid = net.ext_grid[net.ext_grid['junction'] == i]
+                f.write(f'connect({ext_grid["name"][0]}.outlet,junction{i}.inlet )\n')
+            if i in net.sink['junction']:
+                sink = net.sink[net.sink['junction'] == i]
+                f.write(f'connect(junction{i}.outlet{2},{sink["name"][0]}.inlet )\n')
+        else:
             pipes_from = net.pipe[net.pipe['from_junction'] == i]
             pipes_to = net.pipe[net.pipe['to_junction'] == i]
             if pipes_to.empty == False and pipes_from.empty == True:
                 sink = net.sink[net.sink['junction'] == i]
-                f.write(f'connect({pipes_to["name"][0]}.outlet,{sink["name"][0]}.inlet )')
+                f.write(f'connect({pipes_to["name"][0]}.outlet,{sink["name"][0]}.inlet)\n')
             if pipes_from.empty == False and pipes_to.empty == True:
                 ext_grid = net.ext_grid[net.ext_grid['junction'] == i]
-                f.write(f'connect({pipes_from["name"][0]}.outlet,{ext_grid["name"][0]}.inlet )')
+                f.write(f'connect({ext_grid["name"][0]}.outlet,{pipes_from["name"][0]}.inlet)\n')
             if pipes_to.empty == True and pipes_from.empty == True:
                 print('spezial conect')
 
