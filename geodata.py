@@ -6,7 +6,6 @@ import pandapipes.plotting as plot
 net = example.pipe_square_flat(fluid="lgas", p_junction=1.05, tfluid_K=293.15, pipe_d=0.3, pipe_l=1)
 
 def pipes_placement(net, factor = 40):
-    factor = 30
     rotation = []
     origin_x = []
     origin_y = []
@@ -33,16 +32,27 @@ def pipes_placement(net, factor = 40):
     geodata_pipe = pd.DataFrame(dict)
     return(geodata_pipe)
 
-def model_placement(net,factor=30, model='sink'):
+def model_placement(net,factor=40, model='sink'):
     origin_x = []
     origin_y = []
-    for i, row in getattr(net, model).iterrows():
-        sink_name = getattr(net, model)['name'].loc[getattr(net, model).index[i]]
-        junction = getattr(net, model)['junction'].loc[getattr(net, model).index[i]]
-        geodata = net.junction_geodata.loc[net.junction_geodata.index[junction]]
+    for i, row in net.junction.iterrows():
+        if i in getattr(net, model)['junction']:
+            junction = getattr(net, model)['junction'].loc[getattr(net, model).index[i]]
+            geodata = net.junction_geodata.loc[net.junction_geodata.index[junction]]
+            origin_x.append(geodata.x * factor)
+            origin_y.append(geodata.y * factor)
+    dict = {'names': getattr(net, model)['name'], 'origin_x': origin_x, 'origin_y': origin_y}
+    geodata = pd.DataFrame(dict)
+    return(geodata)
+
+def node_placement(net,factor=40):
+    origin_x = []
+    origin_y = []
+    for i, row in net.junction.iterrows():
+        geodata = net.junction_geodata.loc[i]
         origin_x.append(geodata.x * factor)
         origin_y.append(geodata.y * factor)
-    dict = {'names': getattr(net, model)['name'], 'origin_x': origin_x, 'origin_y': origin_y}
+    dict = {'names': net.junction['name'], 'origin_x': origin_x, 'origin_y': origin_y}
     geodata = pd.DataFrame(dict)
     return(geodata)
 
