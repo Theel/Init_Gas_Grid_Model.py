@@ -57,7 +57,7 @@ def node_placement(net,factor=40):
     return(geodata)
 
 
-def str_placement_valves(net, factor, nodes_to):
+def placement_valves(net, factor, nodes_to):
     rotation = []
     origin_x = []
     origin_y = []
@@ -87,7 +87,7 @@ def str_placement_valves(net, factor, nodes_to):
                 rotation.append('270')
             origin_x.append((to_geodata.x*0.5 - from_geodata.x*(0.5-1))*factor)
             origin_y.append((to_geodata.y*0.3 - from_geodata.y*(0.7-1))*factor)
-        names.append("valve" + i)
+        names.append("valve" + str(i))
     dict = {'names': names, 'origin_x': origin_x, 'origin_y': origin_y}
     geodata = pd.DataFrame(dict)
     return (geodata)
