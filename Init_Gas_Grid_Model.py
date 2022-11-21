@@ -62,7 +62,7 @@ def Modelica_create_init(net,modelName="pandapipes_model"):
     # open model file
     f = open(c_packageMain + "/" + c_modelName + ".mo", 'w')
 
-    f.write(f'model Init_{modelName} "{"This model was automatically generated"}"\n')
+    f.write(f'model init_{modelName} "{"This model was automatically generated"}"\n')
 
     # ---------------------------------------------------------------------------
     #   Parameter
@@ -101,7 +101,7 @@ def Modelica_create_init(net,modelName="pandapipes_model"):
         ext_grid_name = net.ext_grid['name'].loc[net.ext_grid.index[i]]
         f.write(f'parameter Modelica.Units.SI.Pressure {ext_grid_name}_p=simCenter.p_eff_2 + simCenter.p_amb_const "|Sources|Pressure at the source";\n')
         f.write(f'parameter Modelica.Units.SI.Temperature {ext_grid_name}_T=simCenter.T_ground "|Sources|Temperature at the source";\n')
-        f.write(f'parameter Modelica.Units.SI.MassFraction {ext_grid_name}_xi[medium.nc - 1]=source1.medium.xi_default "|Sources|Mass specific composition at the source";\n')
+        f.write(f'parameter Modelica.Units.SI.MassFraction {ext_grid_name}_xi[medium.nc - 1]={ext_grid_name}.medium.xi_default "|Sources|Mass specific composition at the source";\n')
     f.write('\n')
 
     write_bComment(f, "Outer Models")
@@ -109,66 +109,6 @@ def Modelica_create_init(net,modelName="pandapipes_model"):
 
     write_bComment(f, "Instances of other Classes")
 
-    def str_placement_pipe(to_geodata, from_geodata, factor):
-        if to_geodata.y == from_geodata.y:
-            if to_geodata.x > from_geodata.x:
-                rotation = '0'
-            else:
-                rotation = '180'
-        else:
-            if to_geodata.y > from_geodata.y:
-                rotation = '90'
-            else:
-                rotation = '270'
-        origin = (str((to_geodata.x*0.5 - from_geodata.x*(0.5-1))*factor),
-                  str((to_geodata.y*0.5 - from_geodata.y*(0.5-1))*factor))
-
-        return ("Placement(transformation(\n"
-                "extent={{-10,6},{10,-6}}, \n"
-                "rotation="+rotation +", \n"
-                "origin={" +origin[0]+","+origin[1]+ "}))")
-
-
-    def str_placement(geodata, factor):
-        origin = (str(geodata.x * factor), str(to_geodata.y * factor))
-        return ("Placement(transformation(\n"
-                "extent={{-15,15},{15,-15}}, \n"
-                "origin={" + origin[0] + "," + origin[1] + "}))")
-
-    def str_placement_nodes(geodata, factor):
-        origin = (str(geodata.x * factor), str(to_geodata.y * factor))
-        return ("Placement(transformation(\n"
-                "extent={{9.5,6},{-9.5,-6}}, \n"
-                "origin={" + origin[0] + "," + origin[1] + "}))")
-
-    def str_placement_valves(net, factor, node):
-        pipe_row = net.pipe.loc[net.pipe['to_junction'] == node]
-        from_junction = pipe_row['from_junction'].loc[pipe_row.index[1]]
-        to_junction = pipe_row['to_junction'].loc[pipe_row.index[1]]
-        from_geodata = net.junction_geodata.loc[net.junction_geodata.index[from_junction]]
-        to_geodata = net.junction_geodata.loc[net.junction_geodata.index[to_junction]]
-        if to_geodata.y == from_geodata.y:
-            if to_geodata.x > from_geodata.x:
-                rotation = '0'
-                origin = (str((to_geodata.x * 0.7 - from_geodata.x * (0.3 - 1)) * factor),
-                          str((to_geodata.y * 0.5 - from_geodata.y * (0.5 - 1)) * factor))
-            else:
-                rotation = '180'
-                origin = (str((to_geodata.x * 0.3 - from_geodata.x * (0.7 - 1)) * factor),
-                          str((to_geodata.y * 0.5 - from_geodata.y * (0.5 - 1)) * factor))
-        else:
-            if to_geodata.y > from_geodata.y:
-                rotation = '90'
-                origin = (str((to_geodata.x * 0.5 - from_geodata.x * (0.5 - 1)) * factor),
-                          str((to_geodata.y * 0.7 - from_geodata.y * (0.3 - 1)) * factor))
-            else:
-                rotation = '270'
-            origin = (str((to_geodata.x*0.5 - from_geodata.x*(0.5-1))*factor),
-                      str((to_geodata.y*0.3 - from_geodata.y*(0.7-1))*factor))
-        return ("Placement(transformation(\n"
-                "extent={{-8,4},{8,-4}}, \n"
-                "rotation="+rotation +", \n"
-                "origin={" + origin[0] + "," + origin[1] + "}))")
 
     if net.fluid.fluid_type == 'gas':
         color = 'yellow'
@@ -178,40 +118,46 @@ def Modelica_create_init(net,modelName="pandapipes_model"):
     #Factor für die Entfernung der einzelnen Bauteile zueinander
     scale_factor = 40
 
+    #DataFrames mit den Koordinaten
+    node_geodata = gd.node_placement(net, scale_factor)
+    pipes_geodata = gd.pipes_placement(net, scale_factor)
+    sink_geodata = gd.model_placement(net, scale_factor, 'sink')
+    ext_geodata = gd.model_placement(net, scale_factor, 'ext_grid')
+
     #pipes
     for i, row in net.pipe.iterrows():
         pipe_name = net.pipe['name'].loc[net.pipe.index[i]]
-        from_junction = net.pipe['from_junction'].loc[net.pipe.index[i]]
-        to_junction = net.pipe['to_junction'].loc[net.pipe.index[i]]
-        from_geodata = net.junction_geodata.loc[net.junction_geodata.index[from_junction]]
-        to_geodata = net.junction_geodata.loc[net.junction_geodata.index[to_junction]]
         f.write(f'TransiEnt.Grid.Gas.StaticCycles.Pipe_{color} {pipe_name}(\n'
                 f'medium=medium,\n'
                 f'Delta_p_nom={pipe_name}_Delta_p_nom,\n'
                 f'm_flow_nom={pipe_name}_m_flow_nom,\n'
                 f'quadraticPressureLoss=quadraticPressureLoss)'
-                f'    annotation ({str_placement_pipe(to_geodata, from_geodata, scale_factor)});\n')
+                f'annotation (Placement(transformation(\n'
+                f'extent={{ {{-10,6}},{{10,-6}} }}, \n'
+                f'rotation={pipes_geodata.rotation[i]},\n'
+                f'origin={{ {pipes_geodata.origin_x[i]} ,{pipes_geodata.origin_y[i]} }})));\n')
+
     #source
     for i, row in net.ext_grid.iterrows():
         ext_grid_name = net.ext_grid['name'].loc[net.ext_grid.index[i]]
-        junction = net.ext_grid['junction'].loc[net.ext_grid.index[i]]
-        geodata = net.junction_geodata.loc[net.junction_geodata.index[junction]]
         f.write(f'TransiEnt.Grid.Gas.StaticCycles.Source_{color}_T {ext_grid_name}(\n'
         f'medium=medium,\n'
         f'p={ext_grid_name}_p,\n'
         f'T={ext_grid_name}_T,\n'
         f'xi={ext_grid_name}_xi)'
-        f'    annotation ({str_placement(geodata, scale_factor)});\n')
+        f'    annotation (Placement(transformation(\n'
+        f'extent={{ {{-15,15}},{{15,-15}} }}, \n'
+        f'origin={{ {ext_geodata.origin_x[i]} ,{ext_geodata.origin_y[i]} }})));\n')
 
     #sink
     for i, row in net.ext_grid.iterrows():
         sink_name = net.sink['name'].loc[net.sink.index[i]]
-        junction = net.sink['junction'].loc[net.sink.index[i]]
-        geodata = net.junction_geodata.loc[net.junction_geodata.index[junction]]
         f.write(f'TransiEnt.Grid.Gas.StaticCycles.Sink_{color} {sink_name}(\n'
         f'm_flow={sink_name}_m_flow,\n'
         f'medium=medium)'
-        f'    annotation ({str_placement(geodata, scale_factor)});\n')
+        f'    annotation (Placement(transformation(\n'
+        f'extent={{ {{-15,15}},{{15,-15}} }},\n'
+        f'origin={{ {sink_geodata.origin_x[i]} ,{sink_geodata.origin_y[i]} }})));\n')
 
     #nodes
     junction_from = net.pipe.groupby(['from_junction']).size()
@@ -222,9 +168,11 @@ def Modelica_create_init(net,modelName="pandapipes_model"):
     for i in range(len(junction_from)):
         if 2 == junction_from.values[i]:
             nodes_from.append(junction_from.index[i])
-            geodata = net.junction_geodata.loc[junction_from.index[i]]
             f.write(f'TransiEnt.Grid.Gas.StaticCycles.Split junction{junction_from.index[i]}(medium=medium)'
-                    f'    annotation ({str_placement_nodes(geodata, scale_factor)});\n')
+            f'annotation (Placement(transformation(\n'
+            f'extent={{{{9.5,6}},{{-9.5,-6}}}},\n'
+            f'origin={{{node_geodata["origin_x"].loc[junction_from.index[i]]},{node_geodata["origin_y"].loc[junction_from.index[i]]}}})));\n')
+
 
         # multi node from
         if 2 < junction_from.values[i]:
@@ -235,12 +183,24 @@ def Modelica_create_init(net,modelName="pandapipes_model"):
     for i in range(len(junction_to)):
         if 2 == junction_to.values[i]:
             nodes_to.append(junction_to.index[i])
-            geodata = net.junction_geodata.loc[junction_to.index[i]]
             f.write(f'TransiEnt.Grid.Gas.StaticCycles.Mixer1 junction{junction_to.index[i]}(medium=medium)'
-                    f'    annotation ({str_placement_nodes(geodata, scale_factor)});\n')
-            #Valve
-            f.write(f'TransiEnt.Grid.Gas.StaticCycles.Valve_cutFlow valve{junction_to.index[i]}(medium=medium)'
-                    f'    annotation ({str_placement_valves(net, scale_factor, junction_to.index[i])});\n')
+                    f'    annotation(Placement(transformation(\n'
+                    f'extent={{{{9.5,6}},{{-9.5,-6}}}},\n'
+                    f'origin={{{node_geodata["origin_x"].loc[junction_to.index[i]]},{node_geodata["origin_y"].loc[junction_to.index[i]]}}})));\n')
+
+        # multi node to
+        if 2 < junction_to.values[i]:
+            print('multi_nodes_to')
+
+
+    #Valve
+    valve_geodata = gd.placement_valves(net, scale_factor, nodes_to)
+    for i in range(len(nodes_to)):
+        f.write(f'TransiEnt.Grid.Gas.StaticCycles.Valve_cutFlow valve{nodes_to[i]}(medium=medium)'
+                f'annotation (Placement(transformation(\n'
+                f'extent={{ {{-10,6}},{{10,-6}} }}, \n'
+                f'rotation={valve_geodata.rotation[i]},\n'
+                f'origin={{ {valve_geodata.origin_x[i]} ,{valve_geodata.origin_y[i]} }})));\n')
 
         # multi node to
         if 2 < junction_to.values[i]:
@@ -250,11 +210,6 @@ def Modelica_create_init(net,modelName="pandapipes_model"):
     f.write("equation\n\n")
 
     #connections
-    node_geodata = gd.node_placement(net, scale_factor)
-    valve_geodata = gd.placement_valves(net, scale_factor, nodes_to)
-    pipes_geodata = gd.pipes_placement(net, scale_factor)
-    sink_geodata = gd.model_placement(net, scale_factor, 'sink')
-    ext_geodata = gd.model_placement(net, scale_factor, 'ext_grid')
     for i, row in net.junction.iterrows():
         if i in nodes_from:
             if i in net.pipe['from_junction']:
@@ -307,7 +262,7 @@ def Modelica_create_init(net,modelName="pandapipes_model"):
                         f.write(f'connect({pipes_to["name"][b]}.outlet,valve{i}.inlet)'
                                 f'annotation (Line(points='
                                 f'{{ {{ {pipes_geodata["origin_x"].values[b]},{pipes_geodata["origin_y"].values[b]} }},'
-                                f'{{ {valve_geodata["origin_x"].values[i]},{valve_geodata["origin_y"].values[i]} }} }},'
+                                f'{{ {valve_geodata["origin_x"].values[valve_count]},{valve_geodata["origin_y"].values[valve_count]} }} }},'
                                 f'color={{0,0,0}}));\n')
                     else:
                         f.write(f'connect({pipes_to["name"][b]}.outlet,junction{i}.inlet{c})'
@@ -316,6 +271,7 @@ def Modelica_create_init(net,modelName="pandapipes_model"):
                                 f'{{ {pipes_geodata["origin_x"].values[b]},{pipes_geodata["origin_y"].values[b]} }} }},'
                                 f'color={{0,0,0}}));\n')
                     c += 1
+            valve_count += 1
             if i in net.pipe['from_junction']:
                 pipes_from = net.pipe[net.pipe['from_junction'] == i]
                 for b, row in pipes_from.iterrows():
@@ -338,7 +294,7 @@ def Modelica_create_init(net,modelName="pandapipes_model"):
                         f'{{ {{ {node_geodata["origin_x"].values[i]},{node_geodata["origin_y"].values[i]} }},'
                         f'{{ {sink_geodata["origin_x"].values[i]},{sink_geodata["origin_y"].values[i]} }} }},'
                         f'color={{0,0,0}}));\n')
-            valve_count += 1
+
 
         else:
             pipes_from = net.pipe['name'].loc[net.pipe['from_junction'] == i]
@@ -374,9 +330,29 @@ def Modelica_create_init(net,modelName="pandapipes_model"):
 
 
     f.write(f'\n'
-            f'end {c_modelName};\n')
+            f'end init_{modelName};\n')
 
     f.close()
 
+    # init für übergeordnetes Gasnetz
+    init = io.StringIO()
+
+    init.write(f'inner init_{modelName} init(\n'
+               f'quadraticPressureLoss=true,\n')
+    for i, row in net.pipe.iterrows():
+        pipe_name = net.pipe['name'].loc[net.pipe.index[i]]
+        init.write(f'{pipe_name}_Delta_p_nom={pipe_name}.Delta_p_nom,\n')
+        init.write(f'{pipe_name}_m_flow_nom={pipe_name}.m_flow_nom,,\n')
+    for i, row in net.sink.iterrows():
+        sink_name = net.sink['name'].loc[net.sink.index[i]]
+        init.write(f'{sink_name}_m_flow=sink1.m_flow_const,\n')
+    for i, row in net.ext_grid.iterrows():
+        ext_grid_name = net.ext_grid['name'].loc[net.ext_grid.index[i]]
+        init.write(f'ext_grid_name_p = 105000,\n')
+        init.write(f'ext_grid_name_T = ext_grid_name.T_const,\n'
+        init.write(f'ext_grid_name_xi = ext_grid_name.xi_const\n')
+    int.write(f')\n')
+
+    return(init)
 Modelica_create_init(net, modelName="pandapipes_model")
 
