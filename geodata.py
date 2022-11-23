@@ -2,6 +2,7 @@ import pandapipes as pp
 import pandas as pd
 import example
 import pandapipes.plotting as plot
+import io
 
 net = example.pipe_square_flat(fluid="lgas", p_junction=1.05, tfluid_K=293.15, pipe_d=0.3, pipe_l=1)
 
@@ -91,3 +92,22 @@ def placement_valves(net, factor, nodes_to):
     dict = {'names': names, 'origin_x': origin_x, 'origin_y': origin_y, 'rotation': rotation}
     geodata = pd.DataFrame(dict)
     return (geodata)
+
+
+def pipes_annotation(net, xy_scale, size_scale=1, pipe_index=0):
+    pipes_geodata = pipes_placement(net, factor=xy_scale)
+    a = io.StringIO()
+    size = [10*size_scale, 6*size_scale]
+    a.write(f'annotation (Placement(transformation(\n'
+            f'extent={{{{{size[0]*-1},{size[1]}}},{{{size[0]},{size[1]*-1}}} }}, \n'
+            f'rotation={pipes_geodata.rotation[pipe_index]},\n'
+            f'origin={{ {pipes_geodata.origin_x[pipe_index]} ,{pipes_geodata.origin_y[pipe_index]} }})));\n')
+    return(a.getvalue())
+def model_annotation(net, model_a='sink', xy_scale=40, size_scale=1, model_index=0):
+    model_geodata = model_placement(net, factor=xy_scale, model=model_a)
+    a = io.StringIO()
+    size = [8*size_scale, 8*size_scale]
+    a.write(f'annotation (Placement(transformation(\n'
+            f'extent={{{{{size[0]},{size[1]*-1}}},{{{size[0]*-1},{size[1]}}} }}, \n'
+            f'origin={{ {model_geodata.origin_x[model_index]} ,{model_geodata.origin_y[model_index]} }})));\n')
+    return(a.getvalue())

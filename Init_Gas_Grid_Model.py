@@ -5,6 +5,7 @@ import pandapipes as pp
 import pandas as pd
 import example
 import geodata as gd
+import io
 
 net = example.pipe_square_flat(fluid="lgas", p_junction=1.05, tfluid_K=293.15, pipe_d=0.3, pipe_l=1)
 
@@ -12,7 +13,7 @@ net = example.pipe_square_flat(fluid="lgas", p_junction=1.05, tfluid_K=293.15, p
 #                     include_res_elements=False, net=net))
 
 
-def Modelica_create_init(net,modelName="pandapipes_model"):
+def Gasnet_create_init(net,modelName="pandapipes_model"):
 
 
     def write_bComment(f, comment):
@@ -207,6 +208,11 @@ def Modelica_create_init(net,modelName="pandapipes_model"):
             print('multi_nodes_to')
 
 
+
+
+
+
+
     f.write("equation\n\n")
 
     #connections
@@ -334,25 +340,34 @@ def Modelica_create_init(net,modelName="pandapipes_model"):
 
     f.close()
 
+    #Controller nur ConstController
+    controller = []
+    if net.controller.empty == False:
+        for i, row in net.controller.iterrows():
+            controller.append(net.controller.object.values[i].element)
+
     # init für übergeordnetes Gasnetz
     init = io.StringIO()
 
     init.write(f'inner init_{modelName} init(\n'
-               f'quadraticPressureLoss=true,\n')
+               f'\t\tquadraticPressureLoss=true,\n')
     for i, row in net.pipe.iterrows():
         pipe_name = net.pipe['name'].loc[net.pipe.index[i]]
-        init.write(f'{pipe_name}_Delta_p_nom={pipe_name}.Delta_p_nom,\n')
-        init.write(f'{pipe_name}_m_flow_nom={pipe_name}.m_flow_nom,,\n')
+        init.write(f'\t\t{pipe_name}_Delta_p_nom={pipe_name}.Delta_p_nom,\n')
+        init.write(f'\t\t{pipe_name}_m_flow_nom={pipe_name}.m_flow_nom,,\n')
     for i, row in net.sink.iterrows():
         sink_name = net.sink['name'].loc[net.sink.index[i]]
-        init.write(f'{sink_name}_m_flow=sink1.m_flow_const,\n')
+        if {sink_name} in controller:
+            init.write(f'\t\t{sink_name}_m_flow={sink_name}.m_flow_const,\n')
+        else:
+            init.write(f'\t\t{sink_name}_m_flow={net.sink.mdot_kg_per_s.values[i]},\n')
     for i, row in net.ext_grid.iterrows():
         ext_grid_name = net.ext_grid['name'].loc[net.ext_grid.index[i]]
-        init.write(f'ext_grid_name_p = 105000,\n')
-        init.write(f'ext_grid_name_T = ext_grid_name.T_const,\n'
-        init.write(f'ext_grid_name_xi = ext_grid_name.xi_const\n')
-    int.write(f')\n')
+        init.write(f'\t\t{ext_grid_name}_p = {net.ext_grid.p_bar.values[i]},\n')
+        init.write(f'\t\t{ext_grid_name}_T = {net.ext_grid.t_k.values[i]},\n')
+        init.write(f'\t\t{ext_grid_name}_xi = {ext_grid_name}.xi_const')
+    init.write(f')  annotation (Placement(transformation(extent={{{{-100,80}},{{-80,100}}}})))\n')
 
     return(init)
-Modelica_create_init(net, modelName="pandapipes_model")
+Gasnet_create_init(net, modelName="pandapipes_model")
 
