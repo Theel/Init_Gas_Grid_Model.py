@@ -350,23 +350,23 @@ def Gasnet_create_init(net,modelName="pandapipes_model"):
     init = io.StringIO()
 
     init.write(f'inner init_{modelName} init(\n'
-               f'\t\tquadraticPressureLoss=true,\n')
+               f'quadraticPressureLoss=true,\n')
     for i, row in net.pipe.iterrows():
         pipe_name = net.pipe['name'].loc[net.pipe.index[i]]
-        init.write(f'\t\t{pipe_name}_Delta_p_nom={pipe_name}.Delta_p_nom,\n')
-        init.write(f'\t\t{pipe_name}_m_flow_nom={pipe_name}.m_flow_nom,,\n')
+        init.write(f'{pipe_name}_Delta_p_nom={pipe_name}.Delta_p_nom,\n')
+        init.write(f'{pipe_name}_m_flow_nom={pipe_name}.m_flow_nom,\n')
     for i, row in net.sink.iterrows():
         sink_name = net.sink['name'].loc[net.sink.index[i]]
         if {sink_name} in controller:
-            init.write(f'\t\t{sink_name}_m_flow={sink_name}.m_flow_const,\n')
+            init.write(f'{sink_name}_m_flow={sink_name}.m_flow_const,\n')
         else:
-            init.write(f'\t\t{sink_name}_m_flow={net.sink.mdot_kg_per_s.values[i]},\n')
+            init.write(f'{sink_name}_m_flow={net.sink.mdot_kg_per_s.values[i]},\n')
     for i, row in net.ext_grid.iterrows():
         ext_grid_name = net.ext_grid['name'].loc[net.ext_grid.index[i]]
-        init.write(f'\t\t{ext_grid_name}_p = {net.ext_grid.p_bar.values[i]},\n')
-        init.write(f'\t\t{ext_grid_name}_T = {net.ext_grid.t_k.values[i]},\n')
-        init.write(f'\t\t{ext_grid_name}_xi = {ext_grid_name}.xi_const')
-    init.write(f')  annotation (Placement(transformation(extent={{{{-100,80}},{{-80,100}}}})))\n')
+        init.write(f'{ext_grid_name}_p = {net.ext_grid.p_bar.values[i]*1e5},\n')
+        init.write(f'{ext_grid_name}_T = {net.ext_grid.t_k.values[i]},\n')
+        init.write(f'{ext_grid_name}_xi = {ext_grid_name}.xi_const')
+    init.write(f')  annotation (Placement(transformation(extent={{{{-100,80}},{{-80,100}}}})));\n')
 
     return(init)
 Gasnet_create_init(net, modelName="pandapipes_model")
