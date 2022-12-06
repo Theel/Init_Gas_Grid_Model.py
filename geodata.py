@@ -6,17 +6,23 @@ import io
 
 net = example.pipe_square_flat(fluid="lgas", p_junction=1.05, tfluid_K=293.15, pipe_d=0.3, pipe_l=1)
 
+def point_zero_xy(net, factor = 40): # point zero (x=0, y=0) at the first ext grid location
+    junction =net.ext_grid['junction'].loc[net.ext_grid.index[0]]
+    geodata = net.junction_geodata.loc[net.junction_geodata.index[junction]]
+    point_zero = [geodata.x * factor, geodata.y * factor]
+    return(point_zero)
 def pipes_placement(net, factor = 40):
+    point_zero=point_zero_xy(net, factor)
     rotation = []
     origin_x = []
     origin_y = []
-    names=[]
+    #names=[]
     for i, row in net.pipe.iterrows():
         from_junction = net.pipe['from_junction'].loc[net.pipe.index[i]]
         to_junction = net.pipe['to_junction'].loc[net.pipe.index[i]]
         from_geodata = net.junction_geodata.loc[net.junction_geodata.index[from_junction]]
         to_geodata = net.junction_geodata.loc[net.junction_geodata.index[to_junction]]
-        if to_geodata.y == from_geodata.y:
+        if to_geodata.y+0.01 > from_geodata.y and from_geodata.y > to_geodata.y-0.01:
             if to_geodata.x > from_geodata.x:
                 rotation.append('0')
             else:
@@ -27,38 +33,41 @@ def pipes_placement(net, factor = 40):
             else:
                 rotation.append('270')
 
-        origin_x.append((to_geodata.x * 0.5 - from_geodata.x * (0.5 - 1)) * factor)
-        origin_y.append((to_geodata.y * 0.5 - from_geodata.y * (0.5 - 1)) * factor)
-    dict = {'names': net.pipe['name'], 'origin_x': origin_x, 'origin_y': origin_y, 'rotation': rotation}
+        origin_x.append((to_geodata.x * 0.5 - from_geodata.x * (0.5 - 1)) * factor-point_zero[0])
+        origin_y.append((to_geodata.y * 0.5 - from_geodata.y * (0.5 - 1)) * factor-point_zero[1])
+    dict = {'names': net.pipe['name'].replace(" ", ""), 'origin_x': origin_x, 'origin_y': origin_y, 'rotation': rotation}
     geodata_pipe = pd.DataFrame(dict)
     return(geodata_pipe)
 
 def model_placement(net,factor=40, model='sink'):
+    point_zero = point_zero_xy(net, factor)
     origin_x = []
     origin_y = []
     for i, row in net.junction.iterrows():
         if i in getattr(net, model)['junction']:
             junction = getattr(net, model)['junction'].loc[getattr(net, model).index[i]]
             geodata = net.junction_geodata.loc[net.junction_geodata.index[junction]]
-            origin_x.append(geodata.x * factor)
-            origin_y.append(geodata.y * factor)
-    dict = {'names': getattr(net, model)['name'], 'origin_x': origin_x, 'origin_y': origin_y}
+            origin_x.append(geodata.x * factor-point_zero[0])
+            origin_y.append(geodata.y * factor-point_zero[1])
+    dict = {'names': getattr(net, model)['name'].replace(" ", ""), 'origin_x': origin_x, 'origin_y': origin_y}
     geodata = pd.DataFrame(dict)
     return(geodata)
 
 def node_placement(net,factor=40):
+    point_zero = point_zero_xy(net, factor)
     origin_x = []
     origin_y = []
     for i, row in net.junction.iterrows():
         geodata = net.junction_geodata.loc[i]
-        origin_x.append(geodata.x * factor)
-        origin_y.append(geodata.y * factor)
-    dict = {'names': net.junction['name'], 'origin_x': origin_x, 'origin_y': origin_y}
+        origin_x.append(geodata.x * factor-point_zero[0])
+        origin_y.append(geodata.y * factor-point_zero[1])
+    dict = {'names': net.junction['name'].replace(" ", ""), 'origin_x': origin_x, 'origin_y': origin_y}
     geodata = pd.DataFrame(dict)
     return(geodata)
 
 
 def placement_valves(net, factor, nodes_to):
+    point_zero = point_zero_xy(net, factor)
     rotation = []
     origin_x = []
     origin_y = []
@@ -73,21 +82,21 @@ def placement_valves(net, factor, nodes_to):
         if to_geodata.y == from_geodata.y:
             if to_geodata.x > from_geodata.x:
                 rotation.append('0')
-                origin_x.append((to_geodata.x * 0.7 - from_geodata.x * (0.3 - 1)) * factor)
-                origin_y.append((to_geodata.y * 0.5 - from_geodata.y * (0.5 - 1)) * factor)
+                origin_x.append((to_geodata.x * 0.7 - from_geodata.x * (0.3 - 1)) * factor-point_zero[0])
+                origin_y.append((to_geodata.y * 0.5 - from_geodata.y * (0.5 - 1)) * factor-point_zero[1])
             else:
                 rotation.append('180')
-                origin_x.append((to_geodata.x * 0.3 - from_geodata.x * (0.7 - 1)) * factor)
-                origin_y.append((to_geodata.y * 0.5 - from_geodata.y * (0.5 - 1)) * factor)
+                origin_x.append((to_geodata.x * 0.3 - from_geodata.x * (0.7 - 1)) * factor-point_zero[0])
+                origin_y.append((to_geodata.y * 0.5 - from_geodata.y * (0.5 - 1)) * factor-point_zero[1])
         else:
             if to_geodata.y > from_geodata.y:
                 rotation.append('90')
-                origin_x.append((to_geodata.x * 0.5 - from_geodata.x * (0.5 - 1)) * factor)
-                origin_y.append((to_geodata.y * 0.7 - from_geodata.y * (0.3 - 1)) * factor)
+                origin_x.append((to_geodata.x * 0.5 - from_geodata.x * (0.5 - 1)) * factor-point_zero[0])
+                origin_y.append((to_geodata.y * 0.7 - from_geodata.y * (0.3 - 1)) * factor-point_zero[1])
             else:
                 rotation.append('270')
-            origin_x.append((to_geodata.x*0.5 - from_geodata.x*(0.5-1))*factor)
-            origin_y.append((to_geodata.y*0.3 - from_geodata.y*(0.7-1))*factor)
+            origin_x.append((to_geodata.x*0.5 - from_geodata.x*(0.5-1))*factor-point_zero[0])
+            origin_y.append((to_geodata.y*0.3 - from_geodata.y*(0.7-1))*factor-point_zero[1])
         names.append("valve" + str(i))
     dict = {'names': names, 'origin_x': origin_x, 'origin_y': origin_y, 'rotation': rotation}
     geodata = pd.DataFrame(dict)
@@ -117,33 +126,50 @@ def model_annotation(net, model_a='sink', xy_scale=40, size_scale=1, model_index
 
 def node_annotation(net, xy_scale, size_scale=1, node_to_from='node_to', node_index=1):
     node_geodata = node_placement(net, factor=xy_scale)
-    junction_from = net.pipe.groupby(['from_junction']).size()
-    junction_to = net.pipe.groupby(['to_junction']).size()
+    #junction_from = net.pipe.groupby(['from_junction']).size()
+    #junction_to = net.pipe.groupby(['to_junction']).size()
     a = io.StringIO()
     size = [9.5 * size_scale, 6 * size_scale]
-    if node_to_from == 'node_from':
-        a.write(f'annotation (Placement(transformation(\n'
+    # if node_to_from == 'node_from':
+    #     a.write(f'annotation (Placement(transformation(\n'
+    #         f'extent={{{{{size[0]},{size[0]}}},{{{size[0]*-1},{size[1]*-1}}}}},\n'
+    #         f'origin={{{node_geodata["origin_x"].loc[junction_from[node_index]]},{node_geodata["origin_y"].loc[junction_from[node_index]]}}})));\n')
+    # if node_to_from == 'node_to':
+    #     a.write(f'annotation (Placement(transformation(\n'
+    #             f'extent={{{{{size[0]},{size[0]}}},{{{size[0] * -1},{size[1] * -1}}}}},\n'
+    #             f'origin={{{node_geodata["origin_x"].loc[junction_to[node_index]]},{node_geodata["origin_y"].loc[junction_to[node_index]]}}})));\n')
+    # if node_to_from == 'multi_in_out':
+    a.write(f'annotation (Placement(transformation(\n'
             f'extent={{{{{size[0]},{size[0]}}},{{{size[0]*-1},{size[1]*-1}}}}},\n'
-            f'origin={{{node_geodata["origin_x"].loc[junction_from.index[node_index]]},{node_geodata["origin_y"].loc[junction_from.index[node_index]]}}})));\n')
-    if node_to_from == 'node_to':
-        a.write(f'annotation (Placement(transformation(\n'
-                f'extent={{{{{size[0]},{size[0]}}},{{{size[0] * -1},{size[1] * -1}}}}},\n'
-                f'origin={{{node_geodata["origin_x"].loc[junction_to.index[node_index]]},{node_geodata["origin_y"].loc[junction_to.index[node_index]]}}})));\n')
+            f'origin={{{node_geodata["origin_x"].loc[node_index]},{node_geodata["origin_y"].loc[node_index]}}})));\n')
     return(a.getvalue())
-def model_connections(net, scale_factor, line_color, init):
+def model_connections(net, scale_factor, line_color):
 
     f = io.StringIO()
     # definition of the nodes
     junction_from = net.pipe.groupby(['from_junction']).size()
-    nodes_from = []
-    for i in range(len(junction_from)):
-        if 2 == junction_from.values[i]:
-            nodes_from.append(junction_from.index[i])
     junction_to = net.pipe.groupby(['to_junction']).size()
     nodes_to = []
+    nodes_from = []
     for i in range(len(junction_to)):
-        if 2 == junction_to.values[i]:
-            nodes_from.append(junction_to.index[i])
+        node_connections = 0
+        if i in net.sink['junction']:
+            node_connections = junction_to.values[i]+1
+        else:
+            node_connections = junction_to.values[i]
+        if 1 < node_connections:
+            nodes_to.append(junction_to.index[i])
+    for i in range(len(junction_from)):
+        node_connections = 0
+        if i in net.ext_grid['junction']:
+            node_connections = junction_to.values[i] + 1
+        else:
+            node_connections = junction_to.values[i]
+        if 1 < node_connections:
+            nodes_from.append(junction_from.index[i])
+    multi_in_out = set(nodes_from) & set(nodes_to)
+    nodes_to = [i for i in nodes_to if i not in multi_in_out]
+    nodes_from = [i for i in nodes_from if i not in multi_in_out]
     #geodata
     node_geodata = node_placement(net, scale_factor)
     pipes_geodata = pipes_placement(net, scale_factor)
@@ -171,15 +197,16 @@ def model_connections(net, scale_factor, line_color, init):
         node_in = 'gasPort'
         node_out = 'gasPort'
 
-    count_f = 0
-    count_t = 0
+
     for i, row in net.junction.iterrows():
+        count_f = 0
+        count_t = 0
         if i in nodes_from:
             if i in net.pipe['from_junction']:
                 pipes_from = net.pipe[net.pipe['from_junction'] == i]
                 for b, row in pipes_from.iterrows():
                     count_f = + 1
-                    f.write(f"connect(junction{i}.{node_out}{count_f},{pipes_from['name'][b]}.{pipe_inlet})"
+                    f.write(f"connect(junction{i}.{node_out}[{count_f}],{pipes_from['name'][b]}.{pipe_inlet})"
                             f'annotation (Line(points='
                             f'{{ {{ {node_geodata["origin_x"].values[i]},{node_geodata["origin_y"].values[i]} }},'
                             f'{{ {pipes_geodata["origin_x"].values[b]},{pipes_geodata["origin_y"].values[b]} }} }},'

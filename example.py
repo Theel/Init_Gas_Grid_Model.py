@@ -1,10 +1,13 @@
 
-
+import pandas as pd
 import pandapipes as pp
 import pandapipes.plotting as plot
 import pandapipes.networks as networks
-
-
+import os
+import pandapower.control as control
+from pandapower.timeseries import DFData
+from pandapower.timeseries import OutputWriter
+from pandapipes.timeseries import run_timeseries
 
 #Parameters:
 #method (str, default "nikuradse") – Which results should be loaded: nikuradse or prandtl-colebrook
@@ -83,3 +86,25 @@ def pipe_square_valve(fluid="lgas", p_junction=1.05, tfluid_K=293.15, pipe_d=0.3
     sink = pp.create_sink(net, junction=junction_sink, mdot_kg_per_s=0.545, name="sink1")
     pp.pipeflow(net)
     return net
+
+def pipe_square_flat_controller(fluid="lgas", p_junction=1.05, tfluid_K=293.15, pipe_d=0.3, pipe_l=1):
+    net = pipe_square_flat(fluid="lgas", p_junction=1.05, tfluid_K=293.15, pipe_d=0.3, pipe_l=1)
+
+    profiles_sink = pd.read_csv(os.path.join('files', 'simple_time_series_example_sink_profiles.csv'), index_col=0)
+
+    ds_sink = DFData(profiles_sink)
+
+    const_sink = control.ConstControl(net, element='sink', variable='mdot_kg_per_s',
+                                      element_index=net.sink.index.values, data_source=ds_sink,
+                                      profile_name=net.sink.index.values.astype(str))
+
+    time_steps = range(10)
+
+    log_variables = [('res_junction', 'p_bar'),
+                     ('res_pipe', 'v_mean_m_per_s'), ('res_pipe', 'reynolds'), ('res_pipe', 'lambda'),
+                     ('res_sink', 'mdot_kg_per_s'),
+                     ('res_ext_grid', 'mdot_kg_per_s')]
+    ow = OutputWriter(net, time_steps, output_path='results', output_file_type='.csv', log_variables=log_variables)
+
+    run_timeseries(net, time_steps)
+    return(net)
