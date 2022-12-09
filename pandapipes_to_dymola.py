@@ -42,10 +42,12 @@ def CDB_to_Modelica(net,modelName="pandapipes_model", xy_scale=40):
 
 
     # TransiEnt.SimCenter
-    f.write(f'inner TransiEnt.SimCenter simCenter(useHomotopy=false, redeclare TransiEnt.Basics.Media.Gases.VLE_VDIWA_CH4 gasModel1) ' 
+    f.write(f'inner TransiEnt.SimCenter simCenter(useHomotopy=true, redeclare TransiEnt.Basics.Media.Gases.VLE_VDIWA_CH4 gasModel1) ' 
             f' annotation (Placement(transformation(extent={{{{-70,80}},{{-50,100}}}})));\n')
+    f.write(f'parameter TILMedia.VLEFluidTypes.BaseVLEFluid medium = simCenter.gasModel1 "Medium natural gas mixture"\n;')
 
-    write_bComment(f, "Pipes and Fittings")
+
+    write_bComment(f, "Pipes")
 
 
 
@@ -53,117 +55,47 @@ def CDB_to_Modelica(net,modelName="pandapipes_model", xy_scale=40):
         pipe_name = net.pipe['name'].loc[net.pipe.index[i]].replace(" ", "")
         pipe_length = net.pipe['length_km'].loc[net.pipe.index[i]]
         pipe_d = net.pipe['diameter_m'].loc[net.pipe.index[i]]
+        #pipe_p = net.pipe['diameter_m'].loc[net.pipe.index[i]]*1e5
+        p_start_in = net.res_pipe["p_from_bar"].loc[net.pipe.index[i]]*1e5
+        p_start_out = net.res_pipe["p_to_bar"].loc[net.pipe.index[i]]*1e5
+        m_flow_start = abs(net.res_pipe["mdot_from_kg_per_s"].loc[net.pipe.index[i]])
+        pipe_T = net.res_pipe['t_from_k'].loc[net.pipe.index[i]]
         f.write(f'TransiEnt.Components.Gas.VolumesValvesFittings.Pipes.PipeFlow_L4_Simple {pipe_name}(\n'
+                f'useHomotopy=true,\n'
+                f'medium=medium,\n'
                 f'frictionAtInlet=true,\n'
                 f'frictionAtOutlet=true,\n'
                 f'initOption=0,\n'
                 f'N_cv=5,\n'
-                f'length(displayUnit="km")={pipe_length},\n'
-                f'diameter_i={pipe_d})\t'
-                #f'redeclare model PressureLoss = ClaRa.Basics.ControlVolumes.Fundamentals.PressureLoss.Generic_PL.QuadraticNominalPoint_L4,\n'
-                #f'h_start=ones({pipe_name}.N_cv)*init.{pipe_name}.h_in,\n'
-                #f'p_start=linspace(\n'
-                #f'  init.{pipe_name}.p_in,\n'
-                #f'  init.{pipe_name}.p_out,\n'
-                #f'  {pipe_name}.N_cv),\n'
-                #f'm_flow_start=ones({pipe_name}.N_cv + 1)*init.{pipe_name}.m_flow,\n'
-                #f'xi_start=init.{pipe_name}.xi_in)\t'
+                f'length(displayUnit="km")={pipe_length*1000},\n'
+                f'diameter_i={pipe_d},\n'
+                #f'p_nom=ones({pipe_name}.N_cv)*{pipe_p},\n'
+                f'xi_start=medium.xi_default,\n'
+                f'h_start=TILMedia.Internals.VLEFluidConfigurations.FullyMixtureCompatible.VLEFluidFunctions.specificEnthalpy_pTxi(medium,{pipe_name}.p_start,{pipe_name}.T_start,{pipe_name}.xi_start),\n'
+                f'T_start=ones({pipe_name}.N_cv)*{pipe_T},\n'
+                f'p_start=linspace(\n'
+                f'  {p_start_in},\n'
+                f'  {p_start_out},\n'
+                f'  {pipe_name}.N_cv),\n'
+                f'm_flow_start=ones({pipe_name}.N_cv + 1)*{m_flow_start})\t'
                 f'{gd.pipes_annotation(net, xy_scale, 1, i)}\n\n')
 
-    # node from
-    junction_from = net.pipe.groupby(['from_junction']).size()
-    junction_to = net.pipe.groupby(['to_junction']).size()
-    nodes_to = []
-    nodes_from = []
-    for i in range(len(junction_to)):
-        node_connections = 0
-        if i in net.ext_grid['junction']:
-            node_connections = junction_to.values[i] + 1
-        else:
-            node_connections = junction_to.values[i]
-        if 1 < node_connections:
-            nodes_to.append(junction_to.index[i])
-    for i in range(len(junction_from)):
-        node_connections = 0
-        if i in net.sink['junction']:
-            node_connections = junction_to.values[i] + 1
-        else:
-            node_connections = junction_to.values[i]
-        if 1 < node_connections:
-            nodes_from.append(junction_from.index[i])
-    multi_in_out = set(nodes_from) & set(nodes_to)
-    nodes_to = [i for i in nodes_to if i not in multi_in_out]
-    nodes_from = [i for i in nodes_from if i not in multi_in_out]
-    for i in nodes_from:
+
+    write_bComment(f, "Nodes")#
+
+    #Nodes
+    nodes = gd.find_nodes(net)
+
+    for i, row in nodes.iterrows():
+        p_start = net.res_junction["p_bar"].loc[net.pipe.index[i]]
         f.write(f'TransiEnt.Components.Gas.VolumesValvesFittings.Fittings.RealGasJunction_L2_nPorts junction{i}(\n'
-                f'initOption=simCenter.initOptionGasPipes)\t'
-                #f'redeclare model PressureLoss2 = ClaRa.Components.VolumesValvesFittings.Fittings.Fundamentals.Linear,\n'
-                #f'p(start=init.junction{i}.p),\n'
-                #f'xi(start=init.junction{i}.xi_in),\n'
-                #f'h(start=init.junction{i}.h_in),\n'
-                #f'volume=1)\t'
+                f'initOption=simCenter.initOptionGasPipes,\n'
+                #f'medium=medium,\n'
+                f'p(start={p_start}),\n'
+                f'n_ports={nodes["connections"][i]})\t'
                 f'{gd.node_annotation(net, xy_scale, node_to_from="node_from", node_index=i)}\n')
 
-    for i in nodes_to:
-        f.write(f'TransiEnt.Components.Gas.VolumesValvesFittings.Fittings.RealGasJunction_L2_nPorts junction{i}(\n'
-                f'initOption=simCenter.initOptionGasPipes)\t'
-                #f'redeclare model PressureLoss2 = ClaRa.Components.VolumesValvesFittings.Fittings.Fundamentals.Linear,\n'
-                #f'p(start=init.junction{i}.p),\n'
-                #f'xi(start=init.junction{i}.xi_in),\n'
-                #f'h(start=init.junction{i}.h_in),\n'
-                #f'volume=1)\t'
-                f'{gd.node_annotation(net, xy_scale, node_to_from="node_to", node_index=i)}\n')
-    for i in multi_in_out:
-        f.write(f'TransiEnt.Components.Gas.VolumesValvesFittings.Fittings.RealGasJunction_L2_nPorts junction{i}(\n'
-                f'initOption=simCenter.initOptionGasPipes)\t'
-                f'{gd.node_annotation(net, xy_scale, node_to_from="node_from", node_index=i)}\n')
-    # node from
-    # junction_from = net.pipe.groupby(['from_junction']).size()
-    # junction_to = net.pipe.groupby(['to_junction']).size()
-    # nodes_to = []
-    # nodes_from = []
-    # for i in range(len(junction_to)):
-    #     if 1 < junction_to.values[i]:
-    #         nodes_to.append(junction_to.index[i])
-    # for i in range(len(junction_from)):
-    #     if 1 < junction_from.values[i]:
-    #         nodes_from.append(junction_from.index[i])
-    # multi_in_out = set(nodes_from) & set(nodes_to)
-    # nodes_to = [i for i in nodes_to if i not in multi_in_out]
-    # nodes_from = [i for i in nodes_from if i not in multi_in_out]
-    #
-    #
-    # for i in nodes_from:
-    #     if junction_from[i] == 2:
-    #         f.write(f'TransiEnt.Components.Gas.VolumesValvesFittings.Fittings.RealGasJunction_L2 junction{i}(\n'
-    #                 f'initOption=0,\n'
-    #                 f'redeclare model PressureLoss2 = ClaRa.Components.VolumesValvesFittings.Fittings.Fundamentals.Linear,\n'
-    #                 f'p(start=init.junction{i}.p),\n'
-    #                 f'xi(start=init.junction{i}.xi_in),\n'
-    #                 f'h(start=init.junction{i}.h_in),\n'
-    #                 f'volume=1)\t'
-    #                 f'{gd.node_annotation(net, xy_scale, node_to_from="node_from", node_index=i)}\n')
-    #
-    #     # multi node from
-    #     if 2 < junction_from[i]:
-    #         print('multi_nodes_from')
-    #
-    # # node to
-    #
-    #
-    #      if junction_to[i] == 2:
-    #         f.write(f'TransiEnt.Components.Gas.VolumesValvesFittings.Fittings.RealGasJunction_L2 junction{i}(\n'
-    #                 f'initOption=0,\n'
-    #                 f'redeclare model PressureLoss2 = ClaRa.Components.VolumesValvesFittings.Fittings.Fundamentals.Linear,\n'
-    #                 f'p(start=init.junction{i}.p),\n'
-    #                 f'xi(start=init.junction{i}.xi_out),\n'
-    #                 f'h(start=init.junction{i}.h_out),\n'
-    #                 f'volume=1)\t'
-    #                 f'{gd.node_annotation(net, xy_scale, node_to_from="node_to", node_index=i)}\n')
-    #
-    #     # multi node to
-    #     if 2 < junction_to[i]:
-    #         print('multi_nodes_to')
+
 
     # controller externe Daten
     write_sComment(f, 'Controller')
@@ -193,6 +125,7 @@ def CDB_to_Modelica(net,modelName="pandapipes_model", xy_scale=40):
             control_sink = 'false'
         f.write(f'TransiEnt.Components.Boundaries.Gas.BoundaryRealGas_Txim_flow {sink_name}(\n'
                 f'p_nom=0,\n'
+                #f'medium=medium,\n'
                 f'm_flow_const={sink_mdot},\n'
                 f'variable_m_flow={control_sink})\t'
                 f'{gd.model_annotation(net, "sink",xy_scale, 1, i)}\n\n')
@@ -201,14 +134,17 @@ def CDB_to_Modelica(net,modelName="pandapipes_model", xy_scale=40):
     write_sComment(f, 'Sources')
     for i, row in net.ext_grid.iterrows():
         ext_name = net.ext_grid['name'].loc[net.ext_grid.index[i]].replace(" ", "")
+        ext_p = net.ext_grid['p_bar'].loc[net.ext_grid.index[i]]
+        ext_T = net.ext_grid['t_k'].loc[net.ext_grid.index[i]]
         if {ext_name} in controller:
             control_ext = 'true'
         else:
             control_ext = 'false'
         f.write(f'TransiEnt.Components.Boundaries.Gas.BoundaryRealGas_pTxi {ext_name}(\n'
-                f'p_const=init.{ext_name}_p,\n'
-                f'T_const=init.{ext_name}_T,\n'
-                f'xi_const=init.{ext_name}.xi,\n'
+                f'p_const={ext_p},\n'
+                f'T_const={ext_T},\n'
+                #f'medium=medium,\n'
+                #f'xi_const=init.{ext_name}.xi,\n'
                 f'variable_p={control_ext},\n'
                 f'variable_T={control_ext},\n'
                 f'variable_xi={control_ext})\t'
@@ -218,6 +154,7 @@ def CDB_to_Modelica(net,modelName="pandapipes_model", xy_scale=40):
 
     # Connections
     #f.write(f'{gd.model_connections(net, xy_scale, "yellow")}')
+    f.write(f'{gd.connections(net, xy_scale, "yellow")}')
     for i in range(len(controller)):                                                                # noch erweitern
         f.write(f'connect({controller[i]}.y[1], sink1.m_flow);\n')
 
