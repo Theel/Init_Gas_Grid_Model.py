@@ -2,7 +2,7 @@ import csv
 from pathlib import Path
 import os
 
-def table_converter(filename, directory):
+def table_converter(filename, directory="files"):
     rows = []
 
     with open(directory+ "/" +filename+ ".csv", 'r') as csvfile:

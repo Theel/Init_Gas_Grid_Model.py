@@ -130,7 +130,7 @@ def CDB_to_Modelica(net,modelName="pandapipes_model", xy_scale=40):
                 f'variable_m_flow={control_sink})\t'
                 f'{gd.model_annotation(net, "sink",xy_scale, 1, i)}\n\n')
 
-    # sources
+    # ext_grid
     write_sComment(f, 'Sources')
     for i, row in net.ext_grid.iterrows():
         ext_name = net.ext_grid['name'].loc[net.ext_grid.index[i]].replace(" ", "")
@@ -150,10 +150,28 @@ def CDB_to_Modelica(net,modelName="pandapipes_model", xy_scale=40):
                 f'variable_xi={control_ext})\t'
                 f'{gd.model_annotation(net, "ext_grid", xy_scale, 1, i)}\n')
 
+    # sources
+    for i, row in net.source.iterrows():
+        source_name = net.source['name'].loc[net.source.index[i]].replace(" ", "")
+        #ext_p = net.source['p_bar'].loc[net.ext_grid.index[i]]
+        source_T = net.source['t_k'].loc[net.source.index[i]]
+        if {source_name} in controller:
+            control_source = 'true'
+        else:
+            control_source = 'false'
+        f.write(f'TransiEnt.Components.Boundaries.Gas.BoundaryRealGas_pTxi {source_name}(\n'
+                #f'p_const={source_p},\n'
+                f'T_const={source_T},\n'
+                #f'medium=medium,\n'
+                #f'xi_const=init.{ext_name}.xi,\n'
+                f'variable_p={control_source},\n'
+                f'variable_T={control_source},\n'
+                f'variable_xi={control_source})\t'
+                f'{gd.model_annotation(net, "source", xy_scale, 1, i)}\n')
+
     f.write("equation\n\n")
 
     # Connections
-    #f.write(f'{gd.model_connections(net, xy_scale, "yellow")}')
     f.write(f'{gd.connections(net, xy_scale, "yellow")}')
     for i in range(len(controller)):                                                                # noch erweitern
         f.write(f'connect({controller[i]}.y[1], sink1.m_flow);\n')
