@@ -167,7 +167,7 @@ def node_annotation(net, xy_scale, size_scale=1, node_to_from='node_to', node_in
             f'origin={{{node_geodata["origin_x"].loc[node_index]},{node_geodata["origin_y"].loc[node_index]}}})));\n')
     return(a.getvalue())
 
-def connections(net, scale_factor, line_color):
+def connections(net, componentList, scale_factor, line_color):
     nodes = find_nodes(net)
     f = io.StringIO()
     #geodata
@@ -175,7 +175,8 @@ def connections(net, scale_factor, line_color):
     pipes_geodata = pipes_placement(net, scale_factor)
     sink_geodata = model_placement(net, scale_factor, 'sink')
     ext_geodata = model_placement(net, scale_factor, 'ext_grid')
-    source_geodata = model_placement(net, scale_factor, 'source')
+    if 'Source' in componentList:
+        source_geodata = model_placement(net, scale_factor, 'source')
 
     #type of connection
     if line_color =='black':
@@ -202,6 +203,7 @@ def connections(net, scale_factor, line_color):
     for i, row in net.junction.iterrows():
         count = 0
         if i in nodes.index:
+
             if i in net.pipe['from_junction'].values:
                 pipes_from = net.pipe[net.pipe['from_junction'] == i]
                 for b, row in pipes_from.iterrows():
@@ -233,33 +235,36 @@ def connections(net, scale_factor, line_color):
                             f'{{ {{ {ext_geodata["origin_x"].values[b]},{ext_geodata["origin_y"].values[b]} }},'
                             f'{{ {node_geodata["origin_x"].values[i]},{node_geodata["origin_y"].values[i]} }} }},'
                             f'color={color}, thickness={thickness}));\n')
-            if i in net.source['junction'].values:
-                source = net.source[net.source['junction'] == i]
-                for b, row in source.iterrows():
-                    count += 1
-                    source_name = source["name"][b].replace(" ","")
-                    f.write(f'connect({source_name}.{model_out},junction{i}.{node_in}[{count}]);'
-                            f'annotation (Line(points='
-                            f'{{ {{ {source_geodata["origin_x"].values[b]},{source_geodata["origin_y"].values[b]} }},'
-                            f'{{ {node_geodata["origin_x"].values[i]},{node_geodata["origin_y"].values[i]} }} }},'
-                            f'color={color}, thickness={thickness}));\n')
-            if i in net.sink['junction'].values:
-                sink = net.sink[net.sink['junction'] == i]
-                for b, row in sink.iterrows():
-                    count += 1
-                    sink_name = sink["name"][b].replace(" ","")
-                    f.write(f'connect(junction{i}.{node_out}[{count}],{sink_name}.{model_in});'
-                            f'annotation (Line(points='
-                            f'{{ {{ {node_geodata["origin_x"].values[i]},{node_geodata["origin_y"].values[i]} }},'
-                            f'{{ {sink_geodata["origin_x"].values[b]},{sink_geodata["origin_y"].values[b]} }} }},'
-                            f'color={color}, thickness={thickness}));\n')
+            if 'Source' in componentList:
+                if i in net.source['junction'].values:
+                    source = net.source[net.source['junction'] == i]
+                    for b, row in source.iterrows():
+                        count += 1
+                        source_name = source["name"][b].replace(" ","")
+                        f.write(f'connect({source_name}.{model_out},junction{i}.{node_in}[{count}]);'
+                                f'annotation (Line(points='
+                                f'{{ {{ {source_geodata["origin_x"].values[b]},{source_geodata["origin_y"].values[b]} }},'
+                                f'{{ {node_geodata["origin_x"].values[i]},{node_geodata["origin_y"].values[i]} }} }},'
+                                f'color={color}, thickness={thickness}));\n')
+            if 'Sink' in componentList:
+                if i in net.sink['junction'].values:
+                    sink = net.sink[net.sink['junction'] == i]
+                    for b, row in sink.iterrows():
+                        count += 1
+                        sink_name = sink["name"][b].replace(" ","")
+                        f.write(f'connect(junction{i}.{node_out}[{count}],{sink_name}.{model_in});'
+                                f'annotation (Line(points='
+                                f'{{ {{ {node_geodata["origin_x"].values[i]},{node_geodata["origin_y"].values[i]} }},'
+                                f'{{ {sink_geodata["origin_x"].values[b]},{sink_geodata["origin_y"].values[b]} }} }},'
+                                f'color={color}, thickness={thickness}));\n')
 
         else:
             pipes_from = net.pipe['name'].loc[net.pipe['from_junction'] == i]
             pipes_to = net.pipe['name'].loc[net.pipe['to_junction'] == i]
             if pipes_to.empty == False and pipes_from.empty == True:
                 sink = net.sink['name'].loc[net.sink['junction'] == i]
-                source = net.source['name'].loc[net.source['junction'] == i]
+                if 'Source' in componentList:
+                    source = net.source['name'].loc[net.source['junction'] == i]
                 ext_grid = net.ext_grid['name'].loc[net.ext_grid['junction'] == i]
                 pipe_name = pipes_to.values[0].replace(" ","")
                 if sink.empty == False:
@@ -280,18 +285,20 @@ def connections(net, scale_factor, line_color):
                             f'{{ {{ {ext_geodata["origin_x"].values[e_index]},{ext_geodata["origin_y"].values[e_index]} }},'
                             f'{{ {pipes_geodata["origin_x"].values[pt_index]},{pipes_geodata["origin_y"].values[pt_index]} }} }},'
                             f'color={color}, thickness={thickness}));\n')
-                if source.empty == False:
-                    source_index = source.index[0]
-                    pt_index = pipes_to.index[0]
-                    source_name = source.values[0].replace(" ", "")
-                    f.write(f'connect({source_name}.{model_out},{pipe_name}.{pipe_inlet})'
-                            f'annotation (Line(points='
-                            f'{{ {{ {source_geodata["origin_x"].values[source_index]},{source_geodata["origin_y"].values[source_index]} }},'
-                            f'{{ {pipes_geodata["origin_x"].values[pt_index]},{pipes_geodata["origin_y"].values[pt_index]} }} }},'
-                            f'color={color}, thickness={thickness}));\n')
+                if 'Source' in componentList:
+                    if source.empty == False:
+                        source_index = source.index[0]
+                        pt_index = pipes_to.index[0]
+                        source_name = source.values[0].replace(" ", "")
+                        f.write(f'connect({source_name}.{model_out},{pipe_name}.{pipe_inlet})'
+                                f'annotation (Line(points='
+                                f'{{ {{ {source_geodata["origin_x"].values[source_index]},{source_geodata["origin_y"].values[source_index]} }},'
+                                f'{{ {pipes_geodata["origin_x"].values[pt_index]},{pipes_geodata["origin_y"].values[pt_index]} }} }},'
+                                f'color={color}, thickness={thickness}));\n')
             elif pipes_from.empty == False and pipes_to.empty == True:
                 ext_grid = net.ext_grid['name'].loc[net.ext_grid['junction'] == i]
-                source = net.source['name'].loc[net.source['junction'] == i]
+                if 'Source' in componentList:
+                    source = net.source['name'].loc[net.source['junction'] == i]
                 sink = net.sink['name'].loc[net.sink['junction'] == i]
                 pipe_name = pipes_from.values[0].replace(" ", "")
                 if ext_grid.empty == False:
@@ -303,15 +310,16 @@ def connections(net, scale_factor, line_color):
                             f'{{ {{ {ext_geodata["origin_x"].values[e_index]},{ext_geodata["origin_y"].values[e_index]} }},'
                             f'{{ {pipes_geodata["origin_x"].values[pf_index]},{pipes_geodata["origin_y"].values[pf_index]} }} }},'
                             f'color={color}, thickness={thickness}));\n')
-                if source.empty == False:
-                    source_index = source.index[0]
-                    pf_index = pipes_from.index[0]
-                    source_name = source.values[0].replace(" ", "")
-                    f.write(f'connect({source_name}.{model_out},{pipe_name}.{pipe_inlet})'
-                            f'annotation (Line(points='
-                            f'{{ {{ {source_geodata["origin_x"].values[source_index]},{source_geodata["origin_y"].values[source_index]} }},'
-                            f'{{ {pipes_geodata["origin_x"].values[pf_index]},{pipes_geodata["origin_y"].values[pf_index]} }} }},'
-                            f'color={color}, thickness={thickness}));\n')
+                if 'Source' in componentList:
+                    if source.empty == False:
+                        source_index = source.index[0]
+                        pf_index = pipes_from.index[0]
+                        source_name = source.values[0].replace(" ", "")
+                        f.write(f'connect({source_name}.{model_out},{pipe_name}.{pipe_inlet})'
+                                f'annotation (Line(points='
+                                f'{{ {{ {source_geodata["origin_x"].values[source_index]},{source_geodata["origin_y"].values[source_index]} }},'
+                                f'{{ {pipes_geodata["origin_x"].values[pf_index]},{pipes_geodata["origin_y"].values[pf_index]} }} }},'
+                                f'color={color}, thickness={thickness}));\n')
                 if sink.empty == False:
                     s_index = sink.index[0]
                     pf_index = pipes_from.index[0]

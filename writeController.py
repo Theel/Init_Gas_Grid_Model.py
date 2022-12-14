@@ -1,4 +1,4 @@
-
+from pathlib import Path
 import os
 import csv
 from scipy.io import matlab
@@ -36,7 +36,68 @@ def controller(net, filename, directory="files" ,model_type="sink_at_"):
     #run_timeseries(net, time_steps)
     return(time_steps)
 
+def table_converter(filename, directory="files"):
+    df = pd.read_csv(directory + "/" + filename + ".csv")
 
+    dym_filename = fr'{str(Path.cwd())}\files\{filename}_dym.txt'
+    f = open("files" + "/" + filename + "_dym.txt", 'w')
+
+    a = 0
+    for (columnName, columnData) in df.items():
+        if columnName != 'Datetime':
+            Data = pd.DataFrame(columnData)
+            a += 1
+            print(a)
+            f.write(f'#{a}\n'
+                    f'double tab{a}({Data.shape[0]-1},{Data.shape[1]+1})\n')
+
+            for i in range(Data.shape[0]):
+                f.write(f'{Data.index[i]},{Data.values[i][0]}\n')
+
+    f.close()
+    return (dym_filename.replace('\\', '/'))
+
+def controll_model(net,c_model_name="pandapipes_model", Data_filename="simple_time_series_example_sink_profiles", directory="files" ):
+    f = open("Models/" + c_model_name + "_control_data.mo", 'w')
+    f.write(f'model {c_model_name}_control_data "{"This model was automatically generated"}"\n')
+    f.write(f'import Modelica.Units.SI;\n')
+    f.write(f'parameter SI.Time startTime=200;\n')
+    f.write(f'parameter Modelica.Blocks.Types.Extrapolation extrapolation=Modelica.Blocks.Types.Extrapolation.HoldLastPoint;\n')
+
+
+    file_path = table_converter(Data_filename, directory)
+    controller = []
+    x = 0
+    c = 0
+    for i, row in net.controller.iterrows():
+        if i % 10 == 0:
+            x_T = -90 + 40*x
+            y_T = 90
+            x +=1
+            c = 0
+        placement_x = x_T
+        placement_y = y_T - 26*c
+        c += 1
+        controller.append(net.controller.object.values[i].element)
+        tab_filename = "tab" + str(i + 1)
+        f.write(f'Modelica.Blocks.Sources.CombiTimeTable {controller[i]}{i}(\n'
+                f'tableOnFile=true,\n'
+                f'tableName="{tab_filename}",\n'
+                f'fileName="{file_path}",\n'
+                f'extrapolation=extrapolation,\n'
+                f'startTime=startTime)\t'
+                f'annotation (Placement(transformation(\n'
+                f'extent={{{{{-10},{-10}}},{{{10},{10}}} }},\n'
+                f'origin={{ {placement_x} ,{placement_y} }})));\n')
+        f.write(f'Modelica.Blocks.Interfaces.RealOutput y{i}\t'
+                f'annotation (Placement(transformation(\n'
+                f'extent={{{{{-10},{-10}}},{{{10},{10}}} }},\n'
+                f'origin={{ {placement_x+20} ,{placement_y} }})));\n')
+    f.write("\n\nequation\n\n")
+    for i, row in net.controller.iterrows():
+        f.write(f'connect({controller[i]}{i}.y[1], y{i});\n')
+    f.write(f'\n end {c_model_name}_control_data;')
+    return controller
 filename = "example"
 net = from_json(os.path.join("network_files", filename+".json"))
 controller(net, "example_loadprofiles_kg_per_s")
