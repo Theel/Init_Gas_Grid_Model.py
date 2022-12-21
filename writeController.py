@@ -12,8 +12,8 @@ from pandapower.timeseries import DFData
 from pandapower.timeseries import OutputWriter
 from pandapipes.timeseries import run_timeseries
 
-def controller(net, filename, directory="files" ,model_type="sink_at_"):
-    df = pd.read_csv(directory+ "/" +filename+".csv")
+def controller(net, filename, Data_filename , directory="files" ,model_type="sink_at_"):
+    df = pd.read_csv(directory + "/" + Data_filename+".csv")
     i = 0
     for (columnName, columnData) in df.items():
         if columnName != 'Datetime':
@@ -25,22 +25,30 @@ def controller(net, filename, directory="files" ,model_type="sink_at_"):
             i+=1
 
 
-    time_steps = range(columnData.size)
-
+    #time_steps = range(columnData.size)
+    time_steps = range(300)
     log_variables = [('res_junction', 'p_bar'),
-                     ('res_pipe', 'v_mean_m_per_s'), ('res_pipe', 'reynolds'), ('res_pipe', 'lambda'),
+                     ('res_pipe', 'p_from_bar'), ('res_pipe', 'p_to_bar'), ('res_pipe', 'v_mean_m_per_s'), ('res_pipe', 'reynolds'), ('res_pipe', 'lambda'),
                      ('res_sink', 'mdot_kg_per_s'),
                      ('res_ext_grid', 'mdot_kg_per_s')]
-    ow = OutputWriter(net, time_steps, output_path='results', output_file_type='.csv', log_variables=log_variables)
 
-    #run_timeseries(net, time_steps)
+    if os.path.exists(f'results/{filename}_results'):
+        output_path = f'results/{filename}_results'
+    else:
+        os.makedirs(f'results/{filename}_results')
+        output_path = f'results/{filename}_results'
+    ow = OutputWriter(net, time_steps, output_path=output_path, output_file_type='.csv', log_variables=log_variables)
+
+    run_timeseries(net, time_steps, continue_on_divergence=True)
+
+
     return(time_steps)
 
-def table_converter(filename, directory="files"):
-    df = pd.read_csv(directory + "/" + filename + ".csv")
+def table_converter(Data_filename, directory="files"):
+    df = pd.read_csv(directory + "/" + Data_filename + ".csv")
 
-    dym_filename = fr'{str(Path.cwd())}\files\{filename}_dym.txt'
-    f = open("files" + "/" + filename + "_dym.txt", 'w')
+    dym_filename = fr'{str(Path.cwd())}\files\{Data_filename}_dym.txt'
+    f = open("files" + "/" + Data_filename + "_dym.txt", 'w')
 
     a = 0
     for (columnName, columnData) in df.items():
@@ -48,7 +56,7 @@ def table_converter(filename, directory="files"):
             Data = pd.DataFrame(columnData)
             a += 1
             print(a)
-            f.write(f'#{a}\n'
+            f.write(f'#{a}\n' # Dymola kann fängt an bei 1 nicht 0
                     f'double tab{a}({Data.shape[0]-1},{Data.shape[1]+1})\n')
 
             for i in range(Data.shape[0]):
@@ -62,6 +70,7 @@ def controll_model(net,c_model_name="pandapipes_model", Data_filename="simple_ti
     f.write(f'model {c_model_name}_control_data "{"This model was automatically generated"}"\n')
     f.write(f'import Modelica.Units.SI;\n')
     f.write(f'parameter SI.Time startTime=200;\n')
+    f.write(f'parameter SI.Time timeScale=900;\n')
     f.write(f'parameter Modelica.Blocks.Types.Extrapolation extrapolation=Modelica.Blocks.Types.Extrapolation.HoldLastPoint;\n')
 
 
@@ -79,12 +88,13 @@ def controll_model(net,c_model_name="pandapipes_model", Data_filename="simple_ti
         placement_y = y_T - 26*c
         c += 1
         controller.append(net.controller.object.values[i].element)
-        tab_filename = "tab" + str(i + 1)
+        tab_filename = "tab" + str(i+1)
         f.write(f'Modelica.Blocks.Sources.CombiTimeTable {controller[i]}{i}(\n'
                 f'tableOnFile=true,\n'
                 f'tableName="{tab_filename}",\n'
                 f'fileName="{file_path}",\n'
                 f'extrapolation=extrapolation,\n'
+                f'timeScale=timeScale,\n'
                 f'startTime=startTime)\t'
                 f'annotation (Placement(transformation(\n'
                 f'extent={{{{{-10},{-10}}},{{{10},{10}}} }},\n'
@@ -98,6 +108,4 @@ def controll_model(net,c_model_name="pandapipes_model", Data_filename="simple_ti
         f.write(f'connect({controller[i]}{i}.y[1], y{i});\n')
     f.write(f'\n end {c_model_name}_control_data;')
     return controller
-filename = "example"
-net = from_json(os.path.join("network_files", filename+".json"))
-controller(net, "example_loadprofiles_kg_per_s")
+

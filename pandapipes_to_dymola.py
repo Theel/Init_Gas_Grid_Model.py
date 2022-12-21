@@ -71,7 +71,7 @@ def CDB_to_Modelica(net,modelName="pandapipes_model", Data_filename = "simple_ti
                     f'frictionAtInlet=true,\n'
                     f'frictionAtOutlet=true,\n'
                     f'initOption=0,\n'
-                    f'N_cv=5,\n'
+                    f'N_cv=3,\n'
                     f'length(displayUnit="km")={pipe_length*1000},\n'
                     f'diameter_i={pipe_d},\n'
                     #f'p_nom=ones({pipe_name}.N_cv)*{pipe_p},\n'
@@ -135,7 +135,7 @@ def CDB_to_Modelica(net,modelName="pandapipes_model", Data_filename = "simple_ti
         write_sComment(f, 'Sources')
         for i, row in net.ext_grid.iterrows():
             ext_name = net.ext_grid['name'].loc[net.ext_grid.index[i]].replace(" ", "")
-            ext_p = net.ext_grid['p_bar'].loc[net.ext_grid.index[i]]
+            ext_p = net.ext_grid['p_bar'].loc[net.ext_grid.index[i]]*1e5
             ext_T = net.ext_grid['t_k'].loc[net.ext_grid.index[i]]
             if {ext_name} in controller:
                 control_ext = 'true'
