@@ -108,3 +108,76 @@ def pipe_square_flat_controller(fluid="lgas", p_junction=1.05, tfluid_K=293.15, 
 
     run_timeseries(net, time_steps)
     return(net)
+
+def pipe_square_flat_mod(fluid="lgas", p_junction=16, tfluid_K=293.15):
+
+    net = pp.create_empty_network(fluid=fluid)
+
+    junction0 = pp.create_junction(net, pn_bar=p_junction, tfluid_k=tfluid_K, name="Junction0", geodata=(0, 0))
+    junction1 = pp.create_junction(net, pn_bar=p_junction, tfluid_k=tfluid_K, name="Junction1", geodata=(2, 0))
+    junction2 = pp.create_junction(net, pn_bar=p_junction, tfluid_k=tfluid_K, name="Junction2", geodata=(4, 0))
+    junction3 = pp.create_junction(net, pn_bar=p_junction, tfluid_k=tfluid_K, name="Junction3", geodata=(2, 4))
+    junction4 = pp.create_junction(net, pn_bar=p_junction, tfluid_k=tfluid_K, name="Junction4", geodata=(4, 4))
+    junction5 = pp.create_junction(net, pn_bar=p_junction, tfluid_k=tfluid_K, name="Junction5", geodata=(6, 0))
+
+    Pipe0 = pp.create_pipe_from_parameters(net, from_junction=junction0, to_junction=junction1, length_km=5,
+                                           diameter_m=0.3, name="Pipe0")
+    Pipe1 = pp.create_pipe_from_parameters(net, from_junction=junction1, to_junction=junction2, length_km=5,
+                                           diameter_m=0.3, name="Pipe1")
+    Pipe2 = pp.create_pipe_from_parameters(net, from_junction=junction1, to_junction=junction3, length_km=2,
+                                           diameter_m=0.1, name="Pipe2")
+    Pipe3 = pp.create_pipe_from_parameters(net, from_junction=junction3, to_junction=junction4, length_km=3,
+                                           diameter_m=0.15, name="Pipe3")
+    Pipe4 = pp.create_pipe_from_parameters(net, from_junction=junction4, to_junction=junction2, length_km=2,
+                                           diameter_m=0.1, name="Pipe4")
+    Pipe5 = pp.create_pipe_from_parameters(net, from_junction=junction2, to_junction=junction5, length_km=6,
+                                           diameter_m=0.2, name="Pipe5")
+
+    Ext_grid_at_0 = pp.create_ext_grid(net, junction=junction0, p_bar=p_junction, name="external_grid_at_0", t_k=tfluid_K)
+    Ext_grid_at_4 = pp.create_ext_grid(net, junction=junction4, p_bar=p_junction, name="external_grid_at_4", t_k=tfluid_K)
+    Sink_at_3 = pp.create_sink(net, junction=junction3, mdot_kg_per_s=0.545, name="Sink_at_3")
+    Sink_at_5 = pp.create_sink(net, junction=junction5, mdot_kg_per_s=0.545, name="Sink_at_5")
+    pp.pipeflow(net)
+    return net
+
+def pipe_comparision_model(fluid="lgas", p_junction=16, tfluid_K=293.15):
+
+    net = pp.create_empty_network(fluid=fluid)
+
+    junction0 = pp.create_junction(net, pn_bar=p_junction, tfluid_k=tfluid_K, name="Junction0", geodata=(0, 0))
+    junction1 = pp.create_junction(net, pn_bar=p_junction, tfluid_k=tfluid_K, name="Junction1", geodata=(2, 0))
+
+
+    Pipe0 = pp.create_pipe_from_parameters(net, from_junction=junction0, to_junction=junction1, length_km=5,
+                                           diameter_m=0.3, name="Pipe0")
+
+    Ext_grid_at_0 = pp.create_ext_grid(net, junction=junction0, p_bar=p_junction, name="external_grid_at_0", t_k=tfluid_K)
+    Sink_at_1 = pp.create_sink(net, junction=junction1, mdot_kg_per_s=0.545, name="Sink_at_1")
+    pp.pipeflow(net)
+
+    return net
+
+def pipe_comparision_x_model(fluid="lgas", p_junction=16, tfluid_K=293.15, number_ofPipes=5):
+
+    net = pp.create_empty_network(fluid=fluid)
+
+    junction = []
+    Pipe = []
+
+    for i in range(number_ofPipes+1):
+        junction.append(pp.create_junction(net, pn_bar=p_junction, tfluid_k=tfluid_K, name=f'Junction{i}', geodata=(i*2, 0)))
+
+    for i in range(number_ofPipes):
+        Pipe.append(pp.create_pipe_from_parameters(net, from_junction=junction[i], to_junction=junction[i+1], length_km=5,
+                                           diameter_m=0.3, name=f'Pipe{i}'))
+
+    Ext_grid_at_0 = pp.create_ext_grid(net, junction=junction[0], p_bar=p_junction, name="external_grid_at_0", t_k=tfluid_K)
+
+    Sink=[]
+
+    for i in range(number_ofPipes+1):
+        if (i+1)%2==0:
+            Sink = pp.create_sink(net, junction=junction[i], mdot_kg_per_s=0.545, name=f'Sink_at_{i}')
+            pp.pipeflow(net)
+
+    return net

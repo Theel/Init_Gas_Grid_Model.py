@@ -13,6 +13,9 @@ def point_zero_xy(net, factor = 40): # point zero (x=0, y=0) at the first ext gr
     return(point_zero)
 
 def find_nodes(net):
+    componentList = []
+    for i in range(len(net.component_list)):
+        componentList.append(net.component_list[i].__name__)
     junction_from = net.pipe.groupby(['from_junction']).size()
     junction_to = net.pipe.groupby(['to_junction']).size()
     all_connections = []
@@ -28,6 +31,9 @@ def find_nodes(net):
             connect += 1
         if i in net.sink['junction'].values:
             connect += 1
+        if "Source" in componentList:
+            if i in net.source['junction'].values:
+                connect += 1
 
         if connect > 2:
             all_nodes.append(i)

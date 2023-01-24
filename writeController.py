@@ -1,6 +1,7 @@
 from pathlib import Path
 import os
 import csv
+import pandapipes as pp
 from scipy.io import matlab
 from pandapipes.io.file_io import from_json
 import pandas as pd
@@ -16,6 +17,8 @@ def controller(net, filename, Data_filename , directory="files" ,model_type="sin
     df = pd.read_csv(directory + "/" + Data_filename+".csv")
     i = 0
     for (columnName, columnData) in df.items():
+        if i > net.sink.index[-1]:
+            break
         if columnName != 'Datetime':
             Data=pd.DataFrame(columnData)
             corretDataForm=DFData(Data)
@@ -42,6 +45,7 @@ def controller(net, filename, Data_filename , directory="files" ,model_type="sin
     run_timeseries(net, time_steps, continue_on_divergence=True)
 
 
+
     return(time_steps)
 
 def table_converter(Data_filename, directory="files"):
@@ -65,9 +69,16 @@ def table_converter(Data_filename, directory="files"):
     f.close()
     return (dym_filename.replace('\\', '/'))
 
-def controll_model(net,c_model_name="pandapipes_model", Data_filename="simple_time_series_example_sink_profiles", directory="files" ):
-    f = open("Models/" + c_model_name + "_control_data.mo", 'w')
-    f.write(f'model {c_model_name}_control_data "{"This model was automatically generated"}"\n')
+def controll_model(net,model_name="pandapipes_model", Data_filename="simple_time_series_example_sink_profiles", directory="files" ):
+
+    if os.path.exists(f'Models/{model_name}'):
+        output_path = f'Models/{model_name}'
+    else:
+        os.makedirs(f'Models/{model_name}')
+        output_path = f'Models/{model_name}'
+
+    f = open(output_path + "/" + model_name + "_control_data.mo", 'w')
+    f.write(f'model {model_name}_control_data "{"This model was automatically generated"}"\n')
     f.write(f'import Modelica.Units.SI;\n')
     f.write(f'parameter SI.Time startTime=200;\n')
     f.write(f'parameter SI.Time timeScale=900;\n')
@@ -106,6 +117,6 @@ def controll_model(net,c_model_name="pandapipes_model", Data_filename="simple_ti
     f.write("\n\nequation\n\n")
     for i, row in net.controller.iterrows():
         f.write(f'connect({controller[i]}{i}.y[1], y{i});\n')
-    f.write(f'\n end {c_model_name}_control_data;')
+    f.write(f'\n end {model_name}_control_data;')
     return controller
 

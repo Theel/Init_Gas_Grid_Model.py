@@ -1,5 +1,6 @@
 import Init_Gas_Grid_Model as init
 import example
+import os
 import geodata as gd
 import Table_converter as Tc
 import writeController as wC
@@ -16,11 +17,16 @@ def CDB_to_Modelica(net,modelName="pandapipes_model", Data_filename = "simple_ti
         remaining = width - len(comment)
         f.write(f'  // {"-" * w1} {comment} {"-" * (remaining - w1)}\n\n')
 
-    c_packageMain = "Models"
-    c_modelName = modelName
 
     # open model file
-    f = open(c_packageMain + "/" + c_modelName + ".mo", 'w')
+    if os.path.exists(f'Models/{modelName}'):
+        output_path = f'Models/{modelName}'
+    else:
+        os.makedirs(f'Models/{modelName}')
+        output_path = f'Models/{modelName}'
+
+
+    f = open(output_path + "/" + modelName + ".mo", 'w')
 
 
     f.write(f'model {modelName} "{"This model was automatically generated"}"\n')
@@ -65,13 +71,22 @@ def CDB_to_Modelica(net,modelName="pandapipes_model", Data_filename = "simple_ti
             p_start_out = net.res_pipe["p_to_bar"].loc[net.pipe.index[i]]*1e5
             m_flow_start = abs(net.res_pipe["mdot_from_kg_per_s"].loc[net.pipe.index[i]])
             pipe_T = net.res_pipe['t_from_k'].loc[net.pipe.index[i]]
-            f.write(f'TransiEnt.Components.Gas.VolumesValvesFittings.Pipes.PipeFlow_L4_Simple {pipe_name}(\n'
-                    f'useHomotopy=true,\n'
+            if abs(p_start_in-p_start_out) == 0:
+                Delta_p_nom = 1100
+                m_flow_nom = 0.5
+            else:
+                Delta_p_nom = abs(p_start_in-p_start_out)
+                m_flow_nom = m_flow_start
+            #f.write(f'TransiEnt.Components.Gas.VolumesValvesFittings.Pipes.PipeFlow_L4_Simple {pipe_name}(\n'
+            f.write(f'PipeFlow_L4_Advanced {pipe_name}(\n'
+                    f'useHomotopy=false,\n'
                     f'medium=medium,\n'
                     f'frictionAtInlet=true,\n'
                     f'frictionAtOutlet=true,\n'
                     f'initOption=0,\n'
                     f'N_cv=3,\n'
+                    f'm_flow_nom={m_flow_nom},\n'
+                    f'Delta_p_nom={Delta_p_nom},\n'
                     f'length(displayUnit="km")={pipe_length*1000},\n'
                     f'diameter_i={pipe_d},\n'
                     #f'p_nom=ones({pipe_name}.N_cv)*{pipe_p},\n'
@@ -109,7 +124,7 @@ def CDB_to_Modelica(net,modelName="pandapipes_model", Data_filename = "simple_ti
     controller = []
     if net.controller.empty == False:
         controller = wC.controll_model(net, modelName, Data_filename)
-        f.write(f'{c_modelName}_control_data control_data\t'
+        f.write(f'{modelName}_control_data control_data\t'
                 f'annotation(Placement(transformation('
                 f'extent={{{{-98,58}},{{-78,78}}}})));\n')
 
