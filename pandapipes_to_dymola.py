@@ -71,23 +71,25 @@ def CDB_to_Modelica(net,modelName="pandapipes_model", Data_filename = "simple_ti
             p_start_out = net.res_pipe["p_to_bar"].loc[net.pipe.index[i]]*1e5
             m_flow_start = abs(net.res_pipe["mdot_from_kg_per_s"].loc[net.pipe.index[i]])
             pipe_T = net.res_pipe['t_from_k'].loc[net.pipe.index[i]]
+            #Delta_p_nom = 10000
+            #m_flow_nom = 100
             if abs(p_start_in-p_start_out) == 0:
-                Delta_p_nom = 1100
-                m_flow_nom = 0.5
+               Delta_p_nom = 1100
+               m_flow_nom = 0.5
             else:
-                Delta_p_nom = abs(p_start_in-p_start_out)
-                m_flow_nom = m_flow_start
+               Delta_p_nom = abs(p_start_in-p_start_out)
+               m_flow_nom = m_flow_start
             #f.write(f'TransiEnt.Components.Gas.VolumesValvesFittings.Pipes.PipeFlow_L4_Simple {pipe_name}(\n'
             f.write(f'PipeFlow_L4_Advanced {pipe_name}(\n'
-                    f'useHomotopy=false,\n'
+                    f'useHomotopy=true,\n'
                     f'medium=medium,\n'
-                    f'frictionAtInlet=true,\n'
-                    f'frictionAtOutlet=true,\n'
+                    f'frictionAtInlet=false,\n'
+                    f'frictionAtOutlet=false,\n'
                     f'initOption=0,\n'
                     f'N_cv=3,\n'
                     f'm_flow_nom={m_flow_nom},\n'
                     f'Delta_p_nom={Delta_p_nom},\n'
-                    f'length(displayUnit="km")={pipe_length*1000},\n'
+                    f'length={pipe_length*1000},\n'
                     f'diameter_i={pipe_d},\n'
                     #f'p_nom=ones({pipe_name}.N_cv)*{pipe_p},\n'
                     f'xi_start=medium.xi_default,\n'
@@ -108,7 +110,7 @@ def CDB_to_Modelica(net,modelName="pandapipes_model", Data_filename = "simple_ti
         nodes = gd.find_nodes(net)
 
         for i, row in nodes.iterrows():
-            p_start = net.res_junction["p_bar"].loc[net.pipe.index[i]]
+            p_start = net.res_junction["p_bar"].loc[net.pipe.index[i]]*1e5
             f.write(f'TransiEnt.Components.Gas.VolumesValvesFittings.Fittings.RealGasJunction_L2_nPorts junction{i}(\n'
                     f'initOption=simCenter.initOptionGasPipes,\n'
                     #f'medium=medium,\n'

@@ -286,7 +286,7 @@ def connections(net, componentList, scale_factor, line_color):
                     e_index = ext_grid.index[0]
                     pt_index = pipes_to.index[0]
                     ext_name = ext_grid.values[0].replace(" ", "")
-                    f.write(f'connect({ext_name}.{model_out},{pipe_name}.{pipe_inlet})'
+                    f.write(f'connect({pipe_name}.{pipe_outlet},{ext_name}.{model_out})'
                             f'annotation (Line(points='
                             f'{{ {{ {ext_geodata["origin_x"].values[e_index]},{ext_geodata["origin_y"].values[e_index]} }},'
                             f'{{ {pipes_geodata["origin_x"].values[pt_index]},{pipes_geodata["origin_y"].values[pt_index]} }} }},'
@@ -296,7 +296,7 @@ def connections(net, componentList, scale_factor, line_color):
                         source_index = source.index[0]
                         pt_index = pipes_to.index[0]
                         source_name = source.values[0].replace(" ", "")
-                        f.write(f'connect({source_name}.{model_out},{pipe_name}.{pipe_inlet})'
+                        f.write(f'connect({pipe_name}.{pipe_outlet},{ext_name}.{model_out})'
                                 f'annotation (Line(points='
                                 f'{{ {{ {source_geodata["origin_x"].values[source_index]},{source_geodata["origin_y"].values[source_index]} }},'
                                 f'{{ {pipes_geodata["origin_x"].values[pt_index]},{pipes_geodata["origin_y"].values[pt_index]} }} }},'
@@ -330,7 +330,7 @@ def connections(net, componentList, scale_factor, line_color):
                     s_index = sink.index[0]
                     pf_index = pipes_from.index[0]
                     sink_name = sink.values[0].replace(" ", "")
-                    f.write(f'connect({pipe_name}.{pipe_outlet},{sink_name}.{model_in})'
+                    f.write(f'connect({sink_name}.{model_in},{pipe_name}.{pipe_inlet})'
                             f'annotation (Line(points='
                             f'{{ {{ {pipes_geodata["origin_x"].values[pf_index]},{pipes_geodata["origin_y"].values[pf_index]} }},'
                             f'{{ {sink_geodata["origin_x"].values[s_index]},{sink_geodata["origin_y"].values[s_index]} }} }},'
