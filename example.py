@@ -1,9 +1,10 @@
-
+import pandapipes_to_dymola as p_to_d
 import pandas as pd
 import pandapipes as pp
 import pandapipes.plotting as plot
 import pandapipes.networks as networks
 import os
+import writeController as wC
 import pandapower.control as control
 from pandapower.timeseries import DFData
 from pandapower.timeseries import OutputWriter
@@ -21,6 +22,10 @@ def pipe_square_high(method="n"):
     pp.pipeflow(net)
     return net
 
+def heat_transfer_one_source():
+    net =networks.simple_heat_transfer_networks.heat_transfer_one_source()
+    pp.pipeflow(net)
+    return net
 def meshed_delta():
     net = networks.simple_gas_networks.gas_meshed_delta()
     #pp.pipeflow(net)
@@ -181,3 +186,5 @@ def pipe_comparision_x_model(fluid="lgas", p_junction=16, tfluid_K=293.15, numbe
             pp.pipeflow(net)
 
     return net
+
+
